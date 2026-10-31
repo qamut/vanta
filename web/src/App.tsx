@@ -22,7 +22,7 @@ const COPY = {
     navCode: "Open source",
     navFaq: "FAQ",
     download: "Download",
-    badge: "Free, no account, open source",
+    badge: "Open source",
     title1: "Your screen just got",
     title2: "an",
     titleAccent: "island",
@@ -34,10 +34,8 @@ const COPY = {
     ),
     ctaWindows: "Download for Windows",
     ctaGithub: "View on GitHub",
-    meta: "Windows 10 & 11 · 64-bit",
     soundOn: "Sound on",
     soundOff: "Mute",
-    worksWith: "Works with what you already use",
     featTitle1: "Everything at the",
     featAccent: "top",
     featTitle2: "of your screen.",
@@ -99,7 +97,7 @@ const COPY = {
     navCode: "Código aberto",
     navFaq: "Perguntas",
     download: "Baixar",
-    badge: "Grátis, sem conta e de código aberto",
+    badge: "Código aberto",
     title1: "Sua tela ganhou",
     title2: "uma",
     titleAccent: "ilha",
@@ -111,10 +109,8 @@ const COPY = {
     ),
     ctaWindows: "Baixar para Windows",
     ctaGithub: "Ver no GitHub",
-    meta: "Windows 10 e 11 · 64 bits",
     soundOn: "Ativar som",
     soundOff: "Sem som",
-    worksWith: "Funciona com o que você já usa",
     featTitle1: "Tudo no",
     featAccent: "topo",
     featTitle2: "da tela.",
@@ -238,9 +234,8 @@ function Nav({ t, lang, setLang }: { t: Copy; lang: Lang; setLang: (l: Lang) => 
   return (
     <header className="fixed inset-x-0 top-4 z-50 px-4">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-full border border-white/10 bg-black/35 py-2 pr-2 pl-4 shadow-[0_20px_60px_-30px_rgb(0_0_0/0.9)] backdrop-blur-xl">
-        <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <img src="media/mascot-head.webp" alt="" className="h-8 w-auto drop-shadow-[0_0_12px_rgb(167_139_250/0.8)]" />
-          VANTA
+        <a href="#top" aria-label="VANTA" className="flex items-center">
+          <img src="media/mascot-head.webp" alt="" className="h-9 w-auto drop-shadow-[0_0_12px_rgb(167_139_250/0.8)]" />
         </a>
         <div className="hidden items-center gap-7 text-sm text-white/70 md:flex">
           <Link003 href="#features" className="hover:text-white">
@@ -271,7 +266,8 @@ function Nav({ t, lang, setLang }: { t: Copy; lang: Lang; setLang: (l: Lang) => 
             ))}
           </div>
           <a
-            href="#download"
+            href={DOWNLOAD}
+            download
             className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium text-black shadow-[0_0_30px_-6px_rgb(196_181_253/0.9)] transition hover:scale-[1.03] active:scale-95 sm:px-5"
           >
             <ArrowDownToLine className="size-4" /> <span className="hidden sm:inline">{t.download}</span>
@@ -328,7 +324,7 @@ function Hero({ t }: { t: Copy }) {
           <h1 className="mx-auto mt-7 max-w-5xl text-[clamp(46px,7.6vw,108px)] leading-[0.92] font-semibold tracking-[-0.06em] drop-shadow-[0_8px_40px_rgb(0_0_0/0.35)]">
             {t.title1}
             <br />
-            {t.title2} <span className="text-aurora pr-[0.06em] font-serif font-normal tracking-[-0.02em] italic">{t.titleAccent}</span>.
+            {t.title2} <span className="text-aurora pr-[0.06em] font-serif font-normal tracking-[-0.02em] italic">{t.titleAccent}</span>
           </h1>
         </Reveal>
         <Reveal delay={0.16}>
@@ -336,7 +332,8 @@ function Hero({ t }: { t: Copy }) {
         </Reveal>
         <Reveal delay={0.24} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
-            href="#download"
+            href={DOWNLOAD}
+            download
             className="group inline-flex h-13 items-center gap-2.5 rounded-full bg-white px-7 font-medium text-black shadow-[0_10px_50px_-8px_rgb(196_181_253/0.85)] transition hover:scale-[1.03] active:scale-95"
           >
             <WindowsMark className="size-4" />
@@ -349,9 +346,6 @@ function Hero({ t }: { t: Copy }) {
           >
             <GithubMark className="size-4" /> {t.ctaGithub}
           </a>
-        </Reveal>
-        <Reveal delay={0.3}>
-          <p className="mt-5 text-sm text-white/50">{t.meta}</p>
         </Reveal>
       </div>
 
@@ -397,10 +391,9 @@ function Hero({ t }: { t: Copy }) {
 
 // ------------------------------------------------------------------ marcas (logos do Simple Icons, CC0)
 const BRANDS = [siSpotify, siYoutube, siYoutubemusic, siNetflix, siApplemusic, siTwitch, siTidal, siSoundcloud, siMax, siVimeo, siItunes, siVlcmediaplayer];
-function Brands({ t }: { t: Copy }) {
+function Brands() {
   return (
     <section className="py-12">
-      <p className="mb-8 text-center text-sm text-white/50">{t.worksWith}</p>
       <div className="mask-fade-x overflow-hidden">
         <div className="flex w-max items-center gap-14 [animation:marquee_45s_linear_infinite] hover:[animation-play-state:paused]">
           {[...BRANDS, ...BRANDS].map((b, i) => (
@@ -727,7 +720,7 @@ export default function App() {
       <Nav t={t} lang={lang} setLang={setLang} />
       <main>
         <Hero t={t} />
-        <Brands t={t} />
+        <Brands />
         <Features t={t} lang={lang} />
         <OpenSource t={t} />
         <Faq t={t} />
