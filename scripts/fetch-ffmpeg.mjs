@@ -85,7 +85,7 @@ function fetchChecked(item, dir) {
   rmSync(into, { recursive: true, force: true });
   mkdirSync(into, { recursive: true });
   // No Windows, o tar do sistema (bsdtar): o GNU tar do Git Bash lê "E:" como nome de servidor.
-  const tar = process.platform === "win32" ? join(process.env.SystemRoot ?? "C:\Windows", "System32", "tar.exe") : "tar";
+  const tar = process.platform === "win32" ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe") : "tar";
   execFileSync(tar, ["-xf", out, "-C", into], { stdio: "inherit" });
   return into;
 }

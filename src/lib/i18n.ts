@@ -8,8 +8,17 @@ import { ptBR } from "./locales/pt-BR";
 export type Key = keyof typeof ptBR;
 const DICTS: Record<Language, Record<Key, string>> = { "pt-BR": ptBR, en };
 
+/** O sistema em que o VANTA roda, para os textos que dizem "{os}" (Windows, macOS ou Linux). */
+export const OS_NAME: string = (() => {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  if (/Macintosh|Mac OS X/.test(ua)) return "macOS";
+  if (/Linux|X11/.test(ua) && !/Android/.test(ua)) return "Linux";
+  return "Windows";
+})();
+
 export function translate(lang: Language, key: Key, vars?: Record<string, string | number>): string {
   let raw: string = DICTS[lang]?.[key] ?? ptBR[key] ?? key;
+  raw = raw.replace(/\{os\}/g, OS_NAME);
   // Plural simples: "singular|plural", escolhido por {n}.
   if (raw.includes("|") && vars && typeof vars.n === "number") {
     const [one, many] = raw.split("|");
