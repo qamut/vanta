@@ -1,6 +1,8 @@
 import { ColorPanels, GodRays, GrainGradient, MeshGradient } from "@paper-design/shaders-react";
 import { ArrowDownToLine, ArrowRight, Check, Copy, Star, Volume2, VolumeX } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { siApplemusic, siItunes, siMax, siNetflix, siSoundcloud, siSpotify, siTidal, siTwitch, siVimeo, siVlcmediaplayer, siYoutube, siYoutubemusic } from "simple-icons";
 
@@ -231,11 +233,20 @@ function Background() {
 
 // ------------------------------------------------------------------ navegação
 function Nav({ t, lang, setLang }: { t: Copy; lang: Lang; setLang: (l: Lang) => void }) {
+  // ao rolar, a barra encolhe para o centro e escurece um pouco
+  const { scrollY } = useScroll();
+  const [compact, setCompact] = useState(false);
+  useMotionValueEvent(scrollY, "change", (y) => setCompact(y > 60));
   return (
-    <header className="fixed inset-x-0 top-4 z-50 px-4">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-full border border-white/10 bg-black/35 py-2 pr-2 pl-4 shadow-[0_20px_60px_-30px_rgb(0_0_0/0.9)] backdrop-blur-xl">
+    <header className={cn("fixed inset-x-0 z-50 px-4 transition-[top] duration-500 ease-out-expo", compact ? "top-2.5" : "top-4")}>
+      <nav
+        className={cn(
+          "mx-auto flex items-center justify-between gap-4 rounded-full border border-white/10 pr-2 pl-4 shadow-[0_20px_60px_-30px_rgb(0_0_0/0.9)] backdrop-blur-xl transition-all duration-500 ease-out-expo",
+          compact ? "max-w-4xl bg-black/55 py-1.5" : "max-w-6xl bg-black/35 py-2",
+        )}
+      >
         <a href="#top" aria-label="VANTA" className="flex items-center">
-          <img src="media/mascot-head.webp" alt="" className="h-9 w-auto drop-shadow-[0_0_12px_rgb(167_139_250/0.8)]" />
+          <img src="media/mascot-head.webp" alt="" className={cn("w-auto drop-shadow-[0_0_12px_rgb(167_139_250/0.8)] transition-all duration-500", compact ? "h-8" : "h-9")} />
         </a>
         <div className="hidden items-center gap-7 text-sm text-white/70 md:flex">
           <Link003 href="#features" className="hover:text-white">
@@ -283,6 +294,10 @@ function Hero({ t }: { t: Copy }) {
   const video = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const still = useReducedMotion();
+  const stage = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: stage, offset: ["start end", "start 0.2"] });
+  const rotate = useTransform(scrollYProgress, [0, 1], [20, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1.05, 1]);
   const toggle = () => {
     const v = video.current;
     if (!v) return;
@@ -349,20 +364,30 @@ function Hero({ t }: { t: Copy }) {
         </Reveal>
       </div>
 
-      {/* o palco: uma aura colorida respirando atrás e o vídeo numa moldura com feixe */}
+      {/* o palco: uma aura colorida respirando atrás e o vídeo num tablet que começa deitado e se
+          endireita ao rolar (o mesmo efeito da hero da Notrix: 20° → 0°, escala 1,05 → 1) */}
       <Reveal delay={0.35} className="relative mx-auto mt-24 max-w-6xl">
-        <div aria-hidden className="pointer-events-none absolute -inset-x-[12%] -inset-y-[18%] -z-10">
-          <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#8b5cf6,#e879f9,#67e8f9,#6366f1,#8b5cf6)] opacity-55 blur-[90px] [animation:spin_18s_linear_infinite]" />
-        </div>
-        {/* o mascote sentado na moldura, como a ilha no topo da tela */}
-        <img
-          src="media/mascot-head.webp"
-          alt=""
-          aria-hidden
-          className="absolute -top-[52px] left-1/2 z-20 w-[118px] -translate-x-1/2 drop-shadow-[0_0_30px_rgb(167_139_250/0.9)] sm:-top-[70px] sm:w-[156px]"
-        />
-        <div className="beam-border rounded-[24px] p-[6px] sm:rounded-[34px] sm:p-2" style={{ "--beam-color": "#f0abfc" } as CSSProperties}>
-          <div className="relative overflow-hidden rounded-[20px] border border-white/15 bg-black shadow-[0_60px_160px_-40px_rgb(139_92_246/0.9)] sm:rounded-[28px]">
+        <div ref={stage} style={{ perspective: "1000px" }}>
+          <div aria-hidden className="pointer-events-none absolute -inset-x-[12%] -inset-y-[18%] -z-10">
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#8b5cf6,#e879f9,#67e8f9,#6366f1,#8b5cf6)] opacity-55 blur-[90px] [animation:spin_18s_linear_infinite]" />
+          </div>
+          <motion.div
+            style={{
+              rotateX: still ? 0 : rotate,
+              scale: still ? 1 : scale,
+              boxShadow: "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a, 0 233px 65px #00000003",
+              "--beam-color": "#f0abfc",
+            } as unknown as CSSProperties}
+            className="beam-border relative rounded-[24px] border border-white/10 bg-[#0b0a10] p-2 sm:rounded-[34px] sm:p-4"
+          >
+            {/* o mascote sentado na moldura, como a ilha no topo da tela */}
+            <img
+              src="media/mascot-head.webp"
+              alt=""
+              aria-hidden
+              className="absolute -top-[52px] left-1/2 z-20 w-[118px] -translate-x-1/2 drop-shadow-[0_0_30px_rgb(167_139_250/0.9)] sm:-top-[70px] sm:w-[156px]"
+            />
+            <div className="relative overflow-hidden rounded-[16px] bg-black sm:rounded-[20px]">
             <video
               ref={video}
               src="media/vanta.mp4"
@@ -383,6 +408,7 @@ function Hero({ t }: { t: Copy }) {
               {muted ? t.soundOn : t.soundOff}
             </button>
           </div>
+          </motion.div>
         </div>
       </Reveal>
     </section>
@@ -435,16 +461,29 @@ function Glows({ tones }: { tones: { c: string; x: string; y: string; s: string 
 }
 
 function FeatureCard({ title, text, art, lang, i }: { title: string; text: string; art: (typeof FEATURE_ART)[number]; lang: Lang; i: number }) {
+  // o cartão inclina na direção do mouse e volta com mola (o largo inclina menos)
+  const still = useReducedMotion();
+  const rx = useSpring(0, { stiffness: 170, damping: 20 });
+  const ry = useSpring(0, { stiffness: 170, damping: 20 });
   const onMove = (e: MouseEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
     e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+    if (still) return;
+    const max = art.wide ? 3 : 6;
+    ry.set(((e.clientX - r.left) / r.width - 0.5) * max * 2);
+    rx.set(-((e.clientY - r.top) / r.height - 0.5) * max * 2);
+  };
+  const onLeave = () => {
+    rx.set(0);
+    ry.set(0);
   };
   return (
     <Reveal delay={(i % 3) * 0.08} className={cn(art.wide && "md:col-span-2")}>
-      <article
+      <motion.article
         onMouseMove={onMove}
-        style={{ "--accent": art.accent, "--beam-color": `rgb(${art.accent})` } as CSSProperties}
+        onMouseLeave={onLeave}
+        style={{ "--accent": art.accent, "--beam-color": `rgb(${art.accent})`, rotateX: rx, rotateY: ry, transformPerspective: 1000 } as unknown as CSSProperties}
         className="group beam-border relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_30px_90px_-40px_rgb(var(--accent)/0.75)] backdrop-blur-2xl"
       >
         {/* a cor do recurso acende o topo; o holofote segue o mouse */}
@@ -466,7 +505,7 @@ function FeatureCard({ title, text, art, lang, i }: { title: string; text: strin
           <h3 className="text-[22px] font-semibold tracking-[-0.03em]">{title}</h3>
           <p className="mt-2 max-w-md text-[15px] leading-relaxed text-white/65">{text}</p>
         </div>
-      </article>
+      </motion.article>
     </Reveal>
   );
 }
@@ -706,6 +745,12 @@ export default function App() {
     document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
     document.title = lang === "pt" ? "VANTA — A Dynamic Island para o Windows" : "VANTA — The Dynamic Island for Windows";
   }, [lang]);
+  // rolagem suave (Lenis, como na Notrix); os links de âncora do menu também deslizam
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const lenis = new Lenis({ autoRaf: true, lerp: 0.1, wheelMultiplier: 1.1, anchors: { offset: -80 } });
+    return () => lenis.destroy();
+  }, []);
   // o vídeo do herói pausa fora da tela (economiza bateria)
   useEffect(() => {
     const v = document.querySelector<HTMLVideoElement>("#top video");

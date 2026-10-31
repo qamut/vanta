@@ -134,8 +134,10 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* clip na raiz: no celular a aura da hero vazava e o navegador alargava a página (846 px num
+   aparelho de 390), levando junto o cabeçalho fixo; overflow no body não impede isso */
 html {
-  scroll-behavior: smooth;
+  overflow-x: clip;
   background: var(--color-ink);
   color-scheme: dark;
 }
