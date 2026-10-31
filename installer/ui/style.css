@@ -1,0 +1,253 @@
+/* Instalador do VANTA — o assistente branco de sempre: fonte do sistema, logo, texto curto e
+   um único botão com a cor do projeto. Sem efeitos além de uma barra de progresso. */
+:root {
+  --bg: #ffffff;
+  --foot: #f3f3f3;
+  --line: #e5e5e5;
+  --text: #1b1b1b;
+  --muted: #5f5f5f;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --ok: #0f7b0f;
+  --err: #c42b1c;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body {
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+body {
+  font: 400 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+}
+
+.card {
+  display: grid;
+  grid-template-rows: 32px auto 1fr auto;
+  height: 100%;
+  background: var(--bg);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+
+/* barra de título */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+}
+.bar__icon {
+  width: 16px;
+  height: 16px;
+}
+.bar__title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+}
+.bar__btns {
+  display: flex;
+  align-self: stretch;
+}
+.bar__btns button {
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+.bar__btns button:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.bar__btns button.is-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+.bar__btns svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+}
+
+/* cabeçalho com o logo */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 32px 4px;
+}
+.head__logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+}
+.head h1 {
+  font: 600 22px/1.2 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+}
+.version {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.head p {
+  color: var(--muted);
+}
+
+/* um painel por estado */
+.panel {
+  display: none;
+  padding: 16px 32px;
+}
+.card[data-state="welcome"] .panel--welcome,
+.card[data-state="working"] .panel--progress,
+.card[data-state="done"] .panel--done,
+.card[data-state="error"] .panel--error {
+  display: block;
+}
+.intro {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* caixas de seleção nativas, na cor do projeto */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* progresso */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.status svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.status--err {
+  color: var(--err);
+  user-select: text;
+}
+.progress {
+  margin-top: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e6e6e6;
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--progress, 0.06));
+  transition: transform 400ms ease-out;
+}
+
+/* rodapé */
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px 14px 32px;
+  background: var(--foot);
+  border-top: 1px solid var(--line);
+}
+.foot__where {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.foot__btns {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  min-width: 96px;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+}
+.btn:hover {
+  background: #f6f6f6;
+}
+.btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.btn--primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  opacity: 0.5;
+}
+
+/* quais botões aparecem em cada estado */
+#finish,
+#launch,
+#retry {
+  display: none;
+}
+.card:not([data-state="welcome"]) #cancel,
+.card:not([data-state="welcome"]) #install {
+  display: none;
+}
+.card[data-state="done"] #finish,
+.card[data-state="done"] #launch,
+.card[data-state="error"] #finish,
+.card[data-state="error"] #retry {
+  display: inline-block;
+}
+#retry[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress span {
+    transition: none;
+  }
+}

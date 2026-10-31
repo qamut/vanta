@@ -1,0 +1,73 @@
+[package]
+name = "vanta"
+version = "1.0.0"
+description = "VANTA — Dynamic Island premium para Windows"
+authors = ["VANTA"]
+license = "MIT"
+repository = "https://github.com/qamut/vanta"
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+name = "vanta_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-log = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+base64 = "0.22"
+sha2 = "0.10"
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "rt", "macros"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.62"
+windows = { version = "0.62", features = [
+  "Foundation",
+  "Foundation_Collections",
+  "Data_Pdf",
+  "Storage",
+  "Media",
+  "Media_Control",
+  "Storage_Streams",
+  "Web",
+  "Web_Http",
+  "Web_Http_Headers",
+  "System_Power",
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_Devices_FunctionDiscovery",
+  "Win32_System_Com",
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
+  "Win32_System_Registry",
+  "Win32_System_WinRT",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Input_KeyboardAndMouse",
+] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

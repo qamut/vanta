@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Política de privacidade — VANTA</title>
+    <meta name="description" content="Como o VANTA trata os seus dados: quase tudo fica no seu computador." />
+    <meta name="theme-color" content="#0b0a0f" />
+    <link rel="icon" href="media/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap" rel="stylesheet" />
+    <style>
+      :root { --bg: #0b0a0f; --surface: #16141d; --line: rgba(255, 255, 255, 0.08); --text: #f5f3fa; --muted: #a29db2; --violet: #c4b5fd; color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 400 16px/1.7 "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      main { max-width: 760px; margin: 0 auto; padding: 40px 16px 96px; }
+      .top { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; text-decoration: none; letter-spacing: -0.02em; }
+      .top img { width: 28px; height: 28px; border-radius: 8px; }
+      h1 { margin: 64px 0 8px; font-size: clamp(36px, 6vw, 52px); font-weight: 600; line-height: 1.05; letter-spacing: -0.05em; }
+      h2 { margin: 48px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -0.03em; }
+      h3 { margin: 24px 0 4px; font-size: 17px; font-weight: 600; }
+      p, li { color: var(--muted); }
+      strong { color: var(--text); font-weight: 600; }
+      .meta { margin: 0 0 32px; }
+      .lead { padding: 20px 24px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font-size: 18px; }
+      a { color: var(--violet); }
+      ul { padding-left: 22px; }
+      code { color: var(--violet); font-size: 0.92em; word-break: break-all; }
+      hr { border: 0; height: 1px; background: var(--line); margin: 72px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="top" href="./"><img src="media/logo.png" alt="" /> VANTA</a>
+
+      <h1>Política de privacidade</h1>
+      <p class="meta">Em vigor desde 31 de outubro de 2026 · <a href="#en">English</a></p>
+
+      <p class="lead">O VANTA funciona no seu computador. Ele não tem conta, servidor, anúncios nem telemetria, e não vende, aluga nem compartilha dados de ninguém.</p>
+
+      <h2>Quem é responsável</h2>
+      <p>O VANTA é um projeto de código aberto publicado em <a href="https://github.com/qamut/vanta">github.com/qamut/vanta</a>. Para qualquer assunto de privacidade, escreva para <a href="mailto:hi@notrix.com.br">hi@notrix.com.br</a>.</p>
+
+      <h2>O que o VANTA usa, e onde isso fica</h2>
+      <ul>
+        <li><strong>Mídia em reprodução.</strong> Título, artista, capa e posição da música ou do vídeo que o Windows já informa aos aplicativos. Fica só na memória enquanto o app está aberto.</li>
+        <li><strong>O que você cria no app.</strong> Tarefas, registros de água, notificações do VANTA e as suas preferências, gravados numa pasta do seu usuário (<code>%APPDATA%\app.vanta.island</code>) e em nenhum outro lugar.</li>
+        <li><strong>Áudio e energia.</strong> Nome e volume do dispositivo de som e o estado da bateria, lidos na hora e não guardados.</li>
+        <li><strong>Arquivos que você converte.</strong> Só os que você escolhe ou arrasta para o VANTA. A conversão acontece no seu computador, pelo FFmpeg que vem com o app.</li>
+        <li><strong>Extensão do navegador (opcional).</strong> Envia ao VANTA, no mesmo computador, o título, o artista, a capa, a duração e a posição da mídia que toca em sites como YouTube e Netflix. Essa comunicação não passa pela internet.</li>
+        <li><strong>Registros técnicos.</strong> Até 1 MB de registros de funcionamento, guardados no seu computador, sem o conteúdo da sua mídia além do nome dos aplicativos.</li>
+      </ul>
+      <p>O VANTA não captura a tela, não registra o que você digita e não lê cookies nem o histórico do navegador.</p>
+
+      <h2>O que sai do seu computador</h2>
+      <p>Só o necessário para três funções, e só quando você as usa:</p>
+      <ul>
+        <li><strong>Letras.</strong> Com “Buscar letras online” ligado (dá para desligar nas configurações), o título, o artista, o álbum e a duração da faixa são enviados ao <a href="https://lrclib.net">LRCLIB</a> para encontrar a letra.</li>
+        <li><strong>Downloads por link.</strong> O VANTA baixa as ferramentas yt-dlp e gallery-dl do GitHub e, quando você pede um download, conecta-se ao site do link. Para sugerir o download, ele confere se o texto copiado é um link de vídeo, só quando a área de transferência muda, sem guardar esse texto. Essa conferência pode ser desligada nas configurações.</li>
+        <li><strong>Atualização do WebView2.</strong> No Windows 10, se faltar o componente WebView2 da Microsoft, o instalador baixa o instalador oficial dele.</li>
+      </ul>
+      <p>Como em qualquer acesso à internet, esses serviços recebem o endereço IP da sua conexão e tratam os dados conforme as próprias políticas.</p>
+
+      <h2>Por quanto tempo, e como apagar</h2>
+      <p>Os dados ficam no seu computador até você apagá-los. Em <em>Configurações › Privacidade</em> você vê o que está guardado, apaga cada item separadamente ou abre a pasta de dados. Ao desinstalar, você escolhe se a pasta de dados também deve ser apagada.</p>
+
+      <h2>Seus direitos</h2>
+      <p>Como os dados não saem do seu computador, você tem acesso e controle diretos sobre eles. Para qualquer pedido ou dúvida com base na LGPD ou em outra lei de proteção de dados, escreva para <a href="mailto:hi@notrix.com.br">hi@notrix.com.br</a>.</p>
+
+      <h2>Mudanças</h2>
+      <p>Se esta política mudar, a nova versão será publicada neste endereço, com a data atualizada no topo. O histórico fica no repositório do projeto.</p>
+
+      <hr />
+
+      <section id="en" lang="en">
+        <h1>Privacy policy</h1>
+        <p class="meta">Effective October 31, 2026</p>
+        <p class="lead">VANTA runs on your computer. It has no account, server, ads or telemetry, and it does not sell, rent or share anyone's data.</p>
+        <h2>Who is responsible</h2>
+        <p>VANTA is an open-source project published at <a href="https://github.com/qamut/vanta">github.com/qamut/vanta</a>. For any privacy matter, write to <a href="mailto:hi@notrix.com.br">hi@notrix.com.br</a>.</p>
+        <h2>What VANTA uses, and where it stays</h2>
+        <ul>
+          <li><strong>Now playing.</strong> Title, artist, artwork and position that Windows already shares with apps, kept in memory only.</li>
+          <li><strong>What you create.</strong> Tasks, water logs, VANTA notifications and preferences, saved in <code>%APPDATA%\app.vanta.island</code> and nowhere else.</li>
+          <li><strong>Audio and power.</strong> Sound device name and volume and battery state, read on demand and not stored.</li>
+          <li><strong>Files you convert.</strong> Only files you pick or drop on VANTA, converted locally by the bundled FFmpeg.</li>
+          <li><strong>Browser extension (optional).</strong> Sends VANTA, on the same computer, the media playing on sites such as YouTube and Netflix. Never over the internet.</li>
+          <li><strong>Technical logs.</strong> Up to 1 MB, on your computer, with no media content beyond app names.</li>
+        </ul>
+        <p>VANTA does not capture the screen, record keystrokes or read browser cookies or history.</p>
+        <h2>What leaves your computer</h2>
+        <ul>
+          <li><strong>Lyrics.</strong> With “Find lyrics online” on (you can turn it off), the track title, artist, album and duration are sent to <a href="https://lrclib.net">LRCLIB</a>.</li>
+          <li><strong>Download by link.</strong> VANTA downloads yt-dlp and gallery-dl from GitHub and connects to the site of the link you ask it to download. It checks copied text for video links only when the clipboard changes, never storing it; this can be turned off.</li>
+          <li><strong>WebView2.</strong> On Windows 10, if Microsoft WebView2 is missing, the installer downloads its official installer.</li>
+        </ul>
+        <p>These services receive your IP address, as with any internet access, and handle data under their own policies.</p>
+        <h2>Retention and deletion</h2>
+        <p>Data stays on your computer until you delete it, from <em>Settings › Privacy</em> or when uninstalling.</p>
+        <h2>Your rights</h2>
+        <p>For any request under the GDPR, the Brazilian LGPD or another data protection law, write to <a href="mailto:hi@notrix.com.br">hi@notrix.com.br</a>.</p>
+      </section>
+    </main>
+  </body>
+</html>

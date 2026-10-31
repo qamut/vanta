@@ -1,0 +1,23 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/schemas/
+browser-extension/dist/
+*.tsbuildinfo
+*.log
+.DS_Store
+release/
+src-tauri/bin/ffmpeg.exe
+promo/renders/
+promo/node_modules/
+promo/.hyperframes/
+promo/.media/
+
+# Peças de divulgação (vídeo, capturas, oficina): ficam fora do repositório
+promo/
+.claude/
+installer/src-tauri/gen/
+
+# Site: o instalador e o vídeo vêm dos anexos do release (.github/workflows/site.yml)
+site/download/
+site/media/vanta.mp4

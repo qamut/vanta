@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Instalação do VANTA</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="card" data-state="welcome">
+      <header class="bar" data-tauri-drag-region>
+        <img class="bar__icon" src="logo.png" alt="" data-tauri-drag-region />
+        <span class="bar__title" data-tauri-drag-region>Instalação do VANTA</span>
+        <span class="bar__btns">
+          <button id="min" aria-label="Minimizar"><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></button>
+          <button id="close" class="is-close" aria-label="Fechar"><svg viewBox="0 0 10 10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" /></svg></button>
+        </span>
+      </header>
+
+      <section class="head">
+        <img class="head__logo" src="logo.png" alt="" />
+        <div>
+          <h1>VANTA <span class="version" id="version">1.0.0</span></h1>
+          <p id="tagline">A Dynamic Island para o Windows.</p>
+        </div>
+      </section>
+
+      <!-- boas-vindas -->
+      <section class="panel panel--welcome">
+        <p class="intro">Este assistente vai instalar o VANTA no seu computador. Não é preciso permissão de administrador.</p>
+        <label class="check">
+          <input type="checkbox" id="optAutostart" checked />
+          <span>Iniciar o VANTA com o Windows</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="optDesktop" checked />
+          <span>Criar atalho na área de trabalho</span>
+        </label>
+      </section>
+
+      <!-- instalando -->
+      <section class="panel panel--progress" aria-live="polite">
+        <p class="status" id="stepLabel">Preparando…</p>
+        <div class="progress"><span></span></div>
+        <ol class="steps" hidden>
+          <li data-step="prepare"></li>
+          <li data-step="install"></li>
+          <li data-step="configure"></li>
+          <li data-step="done"></li>
+        </ol>
+      </section>
+
+      <!-- pronto -->
+      <section class="panel panel--done">
+        <p class="status status--ok">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l3 3 6-6.6" /></svg>
+          O VANTA foi instalado.
+        </p>
+        <p class="intro">A ilha aparece no topo da tela. Clique nela ou passe o mouse para abrir.</p>
+      </section>
+
+      <!-- erro -->
+      <section class="panel panel--error" role="alert">
+        <p class="status status--err" id="error"></p>
+      </section>
+
+      <footer class="foot">
+        <span class="foot__where" id="where"></span>
+        <span class="foot__btns">
+          <button class="btn" id="cancel">Cancelar</button>
+          <button class="btn" id="finish">Fechar</button>
+          <button class="btn btn--primary" id="launch">Abrir o VANTA</button>
+          <button class="btn btn--primary" id="retry">Tentar de novo</button>
+          <button class="btn btn--primary" id="install"><span id="ctaLabel">Instalar</span></button>
+        </span>
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

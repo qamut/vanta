@@ -1,0 +1,83 @@
+/* VANTA — tokens do design system (preto, roxo, violeta).
+   Tudo que é cor, raio, sombra, tempo e tipografia sai daqui. As preferências de aparência
+   (intensidade do roxo, do brilho e opacidade) chegam como --k-accent, --k-glow e --k-opacity. */
+
+:root {
+  /* superfícies */
+  --bg: #050509;
+  --bg-2: #0a0a12;
+  --surface: #11111d;
+  --surface-2: #181827;
+  --surface-3: #1f1f31;
+
+  /* roxo — valores base */
+  --violet-electric: #8b5cf6;
+  --violet: #a78bfa;
+  --violet-deep: #6d28d9;
+  --violet-light: #c4b5fd;
+
+  /* texto */
+  --text: #f7f5ff;
+  --text-2: #aaa7bd;
+  --text-3: #75728a;
+
+  /* linhas e luz */
+  --line: rgba(196, 181, 253, 0.14);
+  --line-strong: rgba(196, 181, 253, 0.24);
+  --glow: rgba(139, 92, 246, 0.24);
+
+  /* estados */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+
+  /* preferências (0..1) */
+  --k-accent: 0.8;
+  --k-glow: 0.55;
+  --k-opacity: 1;
+
+  /* acento derivado: com intensidade baixa o roxo tende ao lavanda acinzentado */
+  --accent: color-mix(in oklab, var(--violet-electric) calc(var(--k-accent) * 100%), #8f8aa8);
+  --accent-soft: color-mix(in oklab, var(--violet) calc(var(--k-accent) * 100%), #a9a5bd);
+  --accent-deep: color-mix(in oklab, var(--violet-deep) calc(var(--k-accent) * 100%), #4b4760);
+  --accent-wash: color-mix(in oklab, var(--violet-electric) calc(var(--k-accent) * 16%), transparent);
+
+  /* raios */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* tipografia */
+  --font: "Geist Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 13.5px;
+  --fs-lg: 15px;
+  --fs-xl: 18px;
+  --fs-display: 34px;
+
+  /* tempo (multiplicado pela velocidade escolhida via --k-speed) */
+  --k-speed: 1;
+  --t-fast: calc(140ms * var(--k-speed));
+  --t-base: calc(220ms * var(--k-speed));
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* sombras */
+  --shadow-capsule: 0 18px 46px -14px rgba(0, 0, 0, 0.85), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --k-speed: 0.01;
+  }
+}
+:root[data-motion="reduced"] {
+  --k-speed: 0.01;
+}

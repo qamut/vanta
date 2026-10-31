@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VANTA — A Dynamic Island para o Windows</title>
+    <meta name="description" content="Uma cápsula no topo da tela com o que está tocando, letra sincronizada, conversor, downloads por link, tarefas e água. Grátis e de código aberto." />
+    <meta name="theme-color" content="#0b0a0f" />
+    <link rel="icon" href="media/favicon.png" />
+    <meta property="og:title" content="VANTA — A Dynamic Island para o Windows" />
+    <meta property="og:description" content="Música, letra, conversor, downloads, tarefas e água numa cápsula no topo da tela. Grátis e de código aberto." />
+    <meta property="og:image" content="https://vanta.notrix.com.br/media/vanta-poster.jpg" />
+    <meta property="og:url" content="https://vanta.notrix.com.br/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="nav__brand" href="#top" aria-label="VANTA, início">
+        <img src="media/logo.png" alt="" width="28" height="28" />
+        <span>VANTA</span>
+      </a>
+      <nav class="nav__links" aria-label="Seções">
+        <a href="#recursos">Recursos</a>
+        <a href="#video">Vídeo</a>
+        <a href="#perguntas">Perguntas</a>
+        <a href="https://github.com/qamut/vanta">GitHub</a>
+      </nav>
+      <a class="btn btn--light btn--sm" href="#baixar">Baixar</a>
+    </header>
+
+    <main id="top">
+      <!-- HERÓI -->
+      <section class="hero">
+        <canvas class="hero__beam" aria-hidden="true"></canvas>
+        <div class="hero__copy">
+          <a class="badge" href="https://github.com/qamut/vanta/releases">
+            <span class="badge__new">v1.0.0</span>
+            <span>Grátis e de código aberto</span>
+            <span class="badge__sep">·</span>
+            <span>Windows 10 e 11</span>
+          </a>
+          <h1 class="hero__title">
+            <span class="reveal">Conheça</span>
+            <img class="hero__logo reveal" src="media/logo.png" alt="" width="84" height="84" />
+            <span class="reveal">VANTA</span>
+          </h1>
+          <p class="hero__lead reveal">
+            A Dynamic Island para o Windows. O que está tocando, com <strong>letra sincronizada</strong>,
+            um <strong>conversor</strong>, <strong>downloads por link</strong>, <strong>tarefas</strong> e
+            <strong>água</strong>, numa cápsula no topo da tela.
+          </p>
+          <div class="hero__cta reveal">
+            <a class="btn btn--light" href="#baixar">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M0 2.3 6.5 1.4v6.2H0zm7.3-1 8.7-1.3v7.6H7.3zM0 8.4h6.5v6.2L0 13.7zm7.3 0H16V16l-8.7-1.2z" /></svg>
+              Baixar para Windows
+            </a>
+            <a class="btn btn--ghost" href="https://github.com/qamut/vanta">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.7-3.6 3.9.3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 0" /></svg>
+              Ver no GitHub
+            </a>
+          </div>
+          <p class="hero__meta reveal">Windows 10 e 11 · 64 bits · sem pedir administrador</p>
+        </div>
+
+        <!-- a ilha de verdade, recortada do app, sobre uma área de trabalho -->
+        <div class="stage reveal" aria-label="Demonstração do VANTA">
+          <div class="stage__screen">
+            <img class="stage__wall" src="media/wall.jpg" alt="" />
+            <div class="island" aria-live="polite">
+              <img data-ui="compact" src="media/ui-compact.webp" alt="Ilha recolhida tocando Luz de Neon" />
+              <img data-ui="music" src="media/ui-music.webp" alt="Player aberto com a letra sincronizada ao lado" />
+              <img data-ui="download" src="media/ui-download.webp" alt="Download de um vídeo em andamento" />
+              <img data-ui="convert" src="media/ui-convert.webp" alt="Conversor com três fotos indo para um PDF" />
+              <img data-ui="tasks" src="media/ui-tasks.webp" alt="Lista de tarefas do dia" />
+              <img data-ui="water" src="media/ui-water.webp" alt="Garrafa de água com o consumo do dia" />
+            </div>
+          </div>
+          <div class="stage__tabs" role="tablist" aria-label="Módulos">
+            <button role="tab" data-go="music">Música</button>
+            <button role="tab" data-go="download">Downloads</button>
+            <button role="tab" data-go="convert">Conversor</button>
+            <button role="tab" data-go="tasks">Tarefas</button>
+            <button role="tab" data-go="water">Água</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RECURSOS -->
+      <section class="section" id="recursos">
+        <header class="section__head reveal">
+          <p class="eyebrow">O que o VANTA faz</p>
+          <h2>Tudo no topo da tela.</h2>
+          <p>Passe o mouse, clique ou use <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>Espaço</kbd>. A cápsula abre, faz o que você precisa e volta a ser só um detalhe da tela.</p>
+        </header>
+
+        <div class="bento">
+          <article class="card card--wide reveal">
+            <div class="card__shot"><img src="media/ui-music.webp" alt="" loading="lazy" /></div>
+            <div class="card__text">
+              <h3>Música com a letra no tempo certo</h3>
+              <p>Spotify, YouTube, Apple Music, Deezer ou qualquer player que fale com o Windows. Capa, linha do tempo, controles e a letra rolando junto com a música.</p>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="card__shot"><img src="media/ui-download.webp" alt="" loading="lazy" /></div>
+            <div class="card__text">
+              <h3>Copiou um link? Ela avisa.</h3>
+              <p>Vídeos do YouTube, TikTok, Instagram, X e Pinterest em MP4 ou só o áudio em MP3, na pasta que você quiser.</p>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="card__shot"><img src="media/ui-convert.webp" alt="" loading="lazy" /></div>
+            <div class="card__text">
+              <h3>Arraste e converta</h3>
+              <p>Fotos viram PDF, PDF vira imagem, vídeo vira MP3. PNG, JPG, WEBP, MP4, GIF, WAV e mais, sem sair da tela onde você está.</p>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="card__shot"><img src="media/ui-tasks.webp" alt="" loading="lazy" /></div>
+            <div class="card__text">
+              <h3>Tarefas do dia</h3>
+              <p>Prioridade, prazo e lembrete. O progresso do dia fica a um gesto de distância.</p>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="card__shot"><img src="media/ui-water.webp" alt="" loading="lazy" /></div>
+            <div class="card__text">
+              <h3>Beba água de verdade</h3>
+              <p>Diga o tamanho da sua garrafa e toque no nível em que a água ficou. O VANTA conta o resto e lembra você.</p>
+            </div>
+          </article>
+
+          <article class="card card--sites reveal">
+            <div class="marquee" aria-hidden="true">
+              <div class="marquee__row">
+                <span>YouTube</span><span>Spotify</span><span>Netflix</span><span>Prime Video</span><span>Apple Music</span><span>Twitch</span><span>Deezer</span><span>Tidal</span><span>SoundCloud</span><span>Disney+</span><span>Max</span><span>Globoplay</span><span>Vimeo</span>
+                <span>YouTube</span><span>Spotify</span><span>Netflix</span><span>Prime Video</span><span>Apple Music</span><span>Twitch</span><span>Deezer</span><span>Tidal</span><span>SoundCloud</span><span>Disney+</span><span>Max</span><span>Globoplay</span><span>Vimeo</span>
+              </div>
+              <div class="marquee__row marquee__row--rev">
+                <span>Vimeo</span><span>Globoplay</span><span>Max</span><span>Disney+</span><span>SoundCloud</span><span>Tidal</span><span>Deezer</span><span>Twitch</span><span>Apple Music</span><span>Prime Video</span><span>Netflix</span><span>Spotify</span><span>YouTube</span>
+                <span>Vimeo</span><span>Globoplay</span><span>Max</span><span>Disney+</span><span>SoundCloud</span><span>Tidal</span><span>Deezer</span><span>Twitch</span><span>Apple Music</span><span>Prime Video</span><span>Netflix</span><span>Spotify</span><span>YouTube</span>
+              </div>
+            </div>
+            <div class="card__text">
+              <h3>Funciona com o seu navegador</h3>
+              <p>A extensão opcional mostra o site exato que está tocando e controla o player, no Chrome, Edge, Brave e Firefox.</p>
+            </div>
+          </article>
+
+          <article class="card card--local reveal">
+            <ul class="local" aria-label="O que fica no seu computador">
+              <li><span>Tarefas</span><em>No seu computador</em></li>
+              <li><span>Registros de água</span><em>No seu computador</em></li>
+              <li><span>Preferências</span><em>No seu computador</em></li>
+              <li><span>Arquivos convertidos</span><em>No seu computador</em></li>
+            </ul>
+            <div class="card__text">
+              <h3>Sem conta. Sem servidor.</h3>
+              <p>O VANTA não tem login, anúncio nem telemetria. O que você cria fica no seu PC, e você apaga quando quiser.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- VÍDEO -->
+      <section class="section section--video" id="video">
+        <header class="section__head reveal">
+          <p class="eyebrow">Em 55 segundos</p>
+          <h2>Veja a ilha trabalhando.</h2>
+        </header>
+        <div class="player reveal">
+          <video id="film" src="media/vanta.mp4" poster="media/vanta-poster.jpg" preload="none" playsinline controls></video>
+          <button class="player__play" type="button" aria-label="Assistir ao vídeo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- PREÇO -->
+      <section class="price" aria-labelledby="price-title">
+        <p class="eyebrow reveal" id="price-title">Quanto custa</p>
+        <p class="price__value reveal" aria-label="Zero reais">R$&#8239;0</p>
+        <p class="price__text reveal">Grátis, sem plano pago e sem recurso trancado. O código é aberto, sob licença MIT: dá para ler, estudar, mudar e contribuir.</p>
+        <a class="btn btn--ghost reveal" href="https://github.com/qamut/vanta">Ler o código no GitHub</a>
+      </section>
+
+      <!-- PERGUNTAS -->
+      <section class="section" id="perguntas">
+        <header class="section__head reveal">
+          <p class="eyebrow">Perguntas</p>
+          <h2>Respostas curtas.</h2>
+        </header>
+        <div class="faq reveal">
+          <details>
+            <summary>O VANTA é grátis mesmo?</summary>
+            <p>Sim. Não tem versão paga, assinatura nem anúncio. O código inteiro está no GitHub sob licença MIT.</p>
+          </details>
+          <details>
+            <summary>Em quais computadores funciona?</summary>
+            <p>Windows 10 e Windows 11, 64 bits. A instalação é só para o seu usuário e não pede administrador. Não há versão para macOS ou Linux.</p>
+          </details>
+          <details>
+            <summary>Por que o Windows avisa “editor desconhecido”?</summary>
+            <p>O instalador ainda não tem assinatura digital, que é um certificado pago. Por isso o SmartScreen pode mostrar o aviso: clique em <em>Mais informações</em> e depois em <em>Executar assim mesmo</em>. Se preferir, confira o código e o SHA-256 do arquivo no GitHub antes.</p>
+          </details>
+          <details>
+            <summary>Para onde vão os meus dados?</summary>
+            <p>Para lugar nenhum. Tarefas, água e preferências ficam no seu PC. Só saem duas coisas, e só quando você usa: o nome da música, para buscar a letra no LRCLIB (dá para desligar), e o link que você mandou baixar. Detalhes na <a href="privacidade">política de privacidade</a>.</p>
+          </details>
+          <details>
+            <summary>Posso baixar qualquer vídeo?</summary>
+            <p>O downloader usa o yt-dlp, uma ferramenta de código aberto. Baixe apenas o que é seu, o que é livre ou o que você tem autorização para baixar. Os termos de cada site continuam valendo.</p>
+          </details>
+          <details>
+            <summary>A ilha atrapalha o que eu estou fazendo?</summary>
+            <p>Não. Ela não rouba o foco da janela em que você está, e fora da cápsula os cliques passam direto para o app de baixo. Dá para arrastá-la para o lado por alguns segundos ou escondê-la pela bandeja.</p>
+          </details>
+          <details>
+            <summary>Como desinstalo?</summary>
+            <p>Configurações do Windows › Aplicativos › VANTA › Desinstalar. Seus dados ficam em <code>%APPDATA%\app.vanta.island</code> e você escolhe se quer apagá-los.</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- BAIXAR -->
+      <section class="download" id="baixar">
+        <img class="download__mascot reveal" src="media/mascot-full.webp" alt="" width="220" />
+        <h2 class="reveal">Sua tela ganhou uma ilha.</h2>
+        <p class="reveal">Instale em menos de um minuto. A cápsula aparece no topo do monitor principal.</p>
+        <div class="dlcard reveal">
+          <div class="dlcard__os">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M0 2.3 6.5 1.4v6.2H0zm7.3-1 8.7-1.3v7.6H7.3zM0 8.4h6.5v6.2L0 13.7zm7.3 0H16V16l-8.7-1.2z" /></svg>
+            <div>
+              <strong>Windows</strong>
+              <span>Windows 10 e 11 · x64 · 52 MB</span>
+            </div>
+          </div>
+          <a class="btn btn--light" href="download/VANTA-Setup-1.0.0.exe" download>Baixar o VANTA 1.0.0</a>
+        </div>
+        <p class="download__alt reveal">
+          Também no <a href="https://github.com/qamut/vanta/releases/latest">GitHub Releases</a>, com o instalador NSIS, o MSI e o SHA-256 de cada arquivo.
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="foot__brand">
+        <img src="media/logo.png" alt="" width="24" height="24" />
+        <span>VANTA</span>
+      </div>
+      <nav aria-label="Rodapé">
+        <a href="https://github.com/qamut/vanta">GitHub</a>
+        <a href="https://github.com/qamut/vanta/releases">Versões</a>
+        <a href="privacidade">Privacidade</a>
+        <a href="https://github.com/qamut/vanta/blob/main/LICENSE">Licença MIT</a>
+      </nav>
+      <p>Feito no Brasil. Não é afiliado à Apple nem à Microsoft.</p>
+    </footer>
+
+    <script src="main.js"></script>
+  </body>
+</html>
