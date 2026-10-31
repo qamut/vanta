@@ -19,11 +19,15 @@ mod macos;
 mod poll;
 
 use std::collections::{HashMap, VecDeque};
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::mpsc::{self, Sender};
+#[cfg(windows)]
+use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use tauri::{AppHandle, Emitter, State};
+#[cfg(windows)]
+use tauri::Emitter;
+use tauri::{AppHandle, State};
 
 use crate::error::{AppError, AppResult};
 use model::{MediaAction, MediaSnapshot};

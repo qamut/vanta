@@ -10,7 +10,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+#[cfg(windows)]
+use tauri::Emitter;
+use tauri::{AppHandle, State};
 
 use crate::error::{AppError, AppResult};
 

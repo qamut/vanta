@@ -341,19 +341,26 @@ mod pdf {
     #[cfg(not(windows))]
     pub struct Doc(pdfium_render::prelude::PdfDocument<'static>);
 
+    /// O `Pdfium` não é `Send`/`Sync`, então não cabe num `static`: cada thread liga a biblioteca
+    /// uma vez e guarda a sua. Abrir e desenhar acontecem sempre na mesma thread (spawn_blocking).
+    /// A ligação em si passa por um cadeado: a inicialização do PDFium não é segura em paralelo.
     #[cfg(not(windows))]
     fn pdfium(lib_dir: &Path) -> Result<&'static pdfium_render::prelude::Pdfium, String> {
         use pdfium_render::prelude::Pdfium;
-        static PDFIUM: std::sync::OnceLock<Option<Pdfium>> = std::sync::OnceLock::new();
+        use std::cell::OnceCell;
+        static BIND: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        thread_local!(static PDFIUM: OnceCell<Option<&'static Pdfium>> = const { OnceCell::new() });
         PDFIUM
-            .get_or_init(|| {
-                Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(lib_dir))
-                    .or_else(|_| Pdfium::bind_to_system_library())
-                    .map(Pdfium::new)
-                    .map_err(|e| log::warn!(target: "tools", "PDFium indisponível: {e}"))
-                    .ok()
+            .with(|cell| {
+                *cell.get_or_init(|| {
+                    let _guard = BIND.lock().unwrap_or_else(|e| e.into_inner());
+                    Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(lib_dir))
+                        .or_else(|_| Pdfium::bind_to_system_library())
+                        .map(|b| &*Box::leak(Box::new(Pdfium::new(b))))
+                        .map_err(|e| log::warn!(target: "tools", "PDFium indisponível: {e}"))
+                        .ok()
+                })
             })
-            .as_ref()
             .ok_or_else(|| "o renderizador de PDF (PDFium) não foi encontrado".to_string())
     }
 
