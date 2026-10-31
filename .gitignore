@@ -19,5 +19,9 @@ promo/
 installer/src-tauri/gen/
 
 # Site: o instalador e o vídeo vêm dos anexos do release (.github/workflows/site.yml)
-site/download/
-site/media/vanta.mp4
+web/public/download/
+web/public/media/vanta.mp4
+web/dist/
+web/node_modules/
+# site estático antigo (substituído por web/)
+site/

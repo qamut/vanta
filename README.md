@@ -23,7 +23,7 @@ all in one capsule at the top of your screen.
 
 <br />
 
-<img src="docs/media/banner.jpg" alt="VANTA website showing the island over a desktop" width="100%" />
+<img src="docs/media/en/banner.jpg" alt="VANTA website showing the island over a desktop" width="100%" />
 
 </div>
 
@@ -37,24 +37,24 @@ all in one capsule at the top of your screen.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/media/music.jpg" alt="Now playing with synced lyrics" /></td>
-    <td width="50%"><img src="docs/media/download.jpg" alt="Downloading a video from a link" /></td>
+    <td width="50%"><img src="docs/media/en/music.jpg" alt="Now playing with synced lyrics" /></td>
+    <td width="50%"><img src="docs/media/en/download.jpg" alt="Downloading a video from a link" /></td>
   </tr>
   <tr>
     <td><b>Now playing, with lyrics in time.</b> Spotify, YouTube, Apple Music, Deezer or any player that talks to Windows. Artwork, timeline, controls, and synced lyrics side by side.</td>
     <td><b>Copied a link? It tells you.</b> Videos from YouTube, TikTok, Instagram, X and Pinterest as MP4, or just the audio as MP3, in the folder you choose.</td>
   </tr>
   <tr>
-    <td><img src="docs/media/convert.jpg" alt="Converting three photos into one PDF" /></td>
-    <td><img src="docs/media/tasks.jpg" alt="Task list" /></td>
+    <td><img src="docs/media/en/convert.jpg" alt="Converting three photos into one PDF" /></td>
+    <td><img src="docs/media/en/tasks.jpg" alt="Task list" /></td>
   </tr>
   <tr>
     <td><b>Drop and convert.</b> Photos to PDF, PDF to images, video to MP3. PNG, JPG, WEBP, ICO, BMP, MP4, WEBM, GIF, WAV, M4A, OGG and more, powered by a bundled FFmpeg.</td>
     <td><b>Today's tasks.</b> Priority, due date, reminders, filters and the day's progress, one gesture away.</td>
   </tr>
   <tr>
-    <td><img src="docs/media/water.jpg" alt="Water bottle tracker" /></td>
-    <td><img src="docs/media/compact.jpg" alt="Collapsed island" /></td>
+    <td><img src="docs/media/en/water.jpg" alt="Water bottle tracker" /></td>
+    <td><img src="docs/media/en/compact.jpg" alt="Collapsed island" /></td>
   </tr>
   <tr>
     <td><b>Drink water, for real.</b> Tell it your bottle size, then tap the level the water dropped to. VANTA counts the rest and reminds you.</td>
@@ -122,7 +122,7 @@ src/                 React 19 UI of the island (TypeScript strict, Motion, Zusta
 src-tauri/           Rust core: window, media sessions, audio, power, converter, downloader, lyrics, native bridge
 browser-extension/   Optional Chromium/Firefox extension (Native Messaging, no network access)
 installer/           The custom setup app (Tauri + plain HTML/CSS/JS) that wraps the NSIS installer
-site/                The website at vanta.notrix.com.br
+web/                 The website at vanta.notrix.com.br (Vite, React, Tailwind, shadcn, Paper shaders)
 docs/                Architecture, validation notes and README media
 ```
 

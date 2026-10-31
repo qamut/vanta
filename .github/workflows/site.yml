@@ -1,11 +1,11 @@
-# Publica o site (site/) no GitHub Pages, com o instalador e o vídeo da última versão.
+# Publica o site (web/) no GitHub Pages, com o instalador e o vídeo da última versão.
 # Os binários não ficam no git: vêm dos anexos do release.
 name: Site
 
 on:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/site.yml"]
+    paths: ["web/**", ".github/workflows/site.yml"]
   release:
     types: [published]
   workflow_dispatch:
@@ -25,20 +25,30 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
       - name: Instalador e vídeo da última versão
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p site/download
+          mkdir -p dist/download
           tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
-          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p 'VANTA-Setup-*.exe' -D site/download
-          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p 'vanta.mp4' -D site/media
-          ls -la site/download site/media
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p 'VANTA-Setup-*.exe' -D dist/download
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p 'vanta.mp4' -D dist/media
+          ls -la dist/download dist/media
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: web/dist
       - id: deploy
         uses: actions/deploy-pages@v4
