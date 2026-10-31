@@ -13,6 +13,7 @@
 use std::time::Duration;
 
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+#[cfg(windows)]
 use tokio::net::windows::named_pipe::ClientOptions;
 use tokio::sync::mpsc;
 
@@ -48,7 +49,11 @@ async fn relay(family: &str) -> i32 {
     let name = pipe_name();
     let mut client = None;
     for _ in 0..10 {
-        match ClientOptions::new().open(&name) {
+        #[cfg(windows)]
+        let attempt = ClientOptions::new().open(&name);
+        #[cfg(unix)]
+        let attempt = tokio::net::UnixStream::connect(&name).await;
+        match attempt {
             Ok(c) => {
                 client = Some(c);
                 break;

@@ -1,0 +1,70 @@
+# Compila, testa e empacota o VANTA para Linux e macOS. Os pacotes ficam como artefatos do
+# workflow para teste: nada é publicado em release nem no site.
+name: Desktop (Linux e macOS)
+
+on:
+  push:
+    branches: [porte-linux-mac]
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: linux-x64
+          - os: macos-14
+            name: macos-arm64
+          - os: macos-13
+            name: macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências do sistema (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev libx11-dev libxi-dev libxtst-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: FFmpeg e PDFium deste sistema
+        run: node scripts/fetch-ffmpeg.mjs
+
+      - run: npm ci
+
+      - name: Testes (frontend e Rust)
+        run: |
+          npm test
+          cd src-tauri && cargo test --lib
+
+      - name: Empacotar
+        run: |
+          node scripts/build-extension.mjs
+          npx tauri build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vanta-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/dmg/*.dmg

@@ -24,13 +24,20 @@ use crate::error::{AppError, AppResult};
 use proto::{AppMessage, BrowserTab, ExtMessage, HOST_NAME};
 
 pub fn pipe_name() -> String {
-    let user: String = std::env::var("USERNAME")
+    let user: String = std::env::var(if cfg!(windows) { "USERNAME" } else { "USER" })
         .unwrap_or_else(|_| "user".into())
         .chars()
         .filter(|c| c.is_ascii_alphanumeric())
         .take(40)
         .collect();
-    format!(r"\\.\pipe\vanta-bridge-v1-{user}")
+    #[cfg(windows)]
+    return format!(r"\\.\pipe\vanta-bridge-v1-{user}");
+    // Linux: a pasta de execução do usuário (só ele acessa); macOS: a pasta temporária dele.
+    #[cfg(not(windows))]
+    {
+        let dir = std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
+        dir.join(format!("vanta-bridge-v1-{user}.sock")).to_string_lossy().into_owned()
+    }
 }
 
 struct Conn {
@@ -109,13 +116,8 @@ fn conn_list(inner: &Inner) -> Vec<ConnInfo> {
 
 pub fn start(app: &AppHandle) -> Bridge {
     let inner = Arc::new(Mutex::new(Inner::default()));
-    #[cfg(windows)]
-    {
-        let (app2, inner2) = (app.clone(), inner.clone());
-        tauri::async_runtime::spawn(async move { server::serve(app2, inner2).await });
-    }
-    #[cfg(not(windows))]
-    let _ = app;
+    let (app2, inner2) = (app.clone(), inner.clone());
+    tauri::async_runtime::spawn(async move { server::serve(app2, inner2).await });
     Bridge { inner }
 }
 
@@ -184,15 +186,61 @@ fn handle_line(app: &AppHandle, inner: &Arc<Mutex<Inner>>, conn: u64, line: &[u8
     }
 }
 
-#[cfg(windows)]
 mod server {
     use super::*;
+    use tokio::io::{AsyncRead, AsyncWrite};
+    #[cfg(windows)]
     use tokio::net::windows::named_pipe::{NamedPipeServer, ServerOptions};
+    #[cfg(windows)]
     use windows::core::w;
+    #[cfg(windows)]
     use windows::Win32::Security::Authorization::{ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1};
+    #[cfg(windows)]
     use windows::Win32::Security::{PSECURITY_DESCRIPTOR, SECURITY_ATTRIBUTES};
 
+    /// Linux e macOS: socket Unix com permissão 0600 (só o próprio usuário conecta).
+    #[cfg(unix)]
+    pub async fn serve(app: AppHandle, inner: Arc<Mutex<Inner>>) {
+        use std::os::unix::fs::PermissionsExt;
+        use tokio::net::UnixListener;
+        let path = pipe_name();
+        loop {
+            // Um socket que sobrou de uma execução que caiu impediria o bind.
+            let _ = std::fs::remove_file(&path);
+            match UnixListener::bind(&path) {
+                Ok(listener) => {
+                    let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+                    if let Ok(mut g) = inner.lock() {
+                        g.listening = true;
+                        g.error = None;
+                    }
+                    log::info!(target: "bridge", "ouvindo em {path}");
+                    loop {
+                        match listener.accept().await {
+                            Ok((stream, _)) => {
+                                tauri::async_runtime::spawn(handle(app.clone(), inner.clone(), stream));
+                            }
+                            Err(e) => {
+                                log::warn!(target: "bridge", "falha ao aceitar conexão: {e}");
+                                break;
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::warn!(target: "bridge", "socket {path} indisponível: {e}");
+                    if let Ok(mut g) = inner.lock() {
+                        g.listening = false;
+                        g.error = Some(e.to_string());
+                    }
+                    tokio::time::sleep(Duration::from_secs(30)).await;
+                }
+            }
+        }
+    }
+
     /// DACL: só o dono do pipe (o usuário que rodou o VANTA) e o SYSTEM. Sem "Everyone".
+    #[cfg(windows)]
     fn security_attributes() -> Option<&'static mut SECURITY_ATTRIBUTES> {
         let mut sd = PSECURITY_DESCRIPTOR::default();
         unsafe {
@@ -208,6 +256,7 @@ mod server {
     }
 
     /// `sa` é o endereço do SECURITY_ATTRIBUTES estático (usize para a future ser `Send`).
+    #[cfg(windows)]
     fn create(name: &str, first: bool, sa: Option<usize>) -> std::io::Result<NamedPipeServer> {
         let mut opts = ServerOptions::new();
         opts.first_pipe_instance(first).reject_remote_clients(true).max_instances(8);
@@ -217,6 +266,7 @@ mod server {
         }
     }
 
+    #[cfg(windows)]
     pub async fn serve(app: AppHandle, inner: Arc<Mutex<Inner>>) {
         let name = pipe_name();
         let sa = security_attributes().map(|s| s as *mut SECURITY_ATTRIBUTES as usize);
@@ -262,7 +312,7 @@ mod server {
         }
     }
 
-    async fn handle(app: AppHandle, inner: Arc<Mutex<Inner>>, pipe: NamedPipeServer) {
+    async fn handle<S: AsyncRead + AsyncWrite + Send + 'static>(app: AppHandle, inner: Arc<Mutex<Inner>>, pipe: S) {
         let (read_half, mut write_half) = tokio::io::split(pipe);
         let (tx, mut rx) = unbounded_channel::<String>();
         let id = {
@@ -341,6 +391,42 @@ const BROWSERS: &[(&str, &str, &str, &str)] = &[
     ("firefox", "Firefox", "firefox.exe", r"Software\Mozilla\NativeMessagingHosts"),
 ];
 
+/// Onde cada navegador procura manifestos de host nativo no Linux e no macOS: (pasta do
+/// navegador que prova que ele está instalado, pasta dos manifestos).
+#[cfg(not(windows))]
+fn manifest_dirs(id: &str) -> Vec<(PathBuf, PathBuf)> {
+    let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else { return Vec::new() };
+    #[cfg(target_os = "macos")]
+    let (base, hosts, firefox) = (home.join("Library/Application Support"), "NativeMessagingHosts", "Mozilla");
+    #[cfg(not(target_os = "macos"))]
+    let (base, hosts, firefox) = (home.join(".config"), "NativeMessagingHosts", "");
+    let pair = |app: &str| (base.join(app), base.join(app).join(hosts));
+    match id {
+        #[cfg(target_os = "macos")]
+        "chrome" => vec![pair("Google/Chrome"), pair("Chromium")],
+        #[cfg(not(target_os = "macos"))]
+        "chrome" => vec![pair("google-chrome"), pair("chromium")],
+        #[cfg(target_os = "macos")]
+        "edge" => vec![pair("Microsoft Edge")],
+        #[cfg(not(target_os = "macos"))]
+        "edge" => vec![pair("microsoft-edge")],
+        "brave" => vec![pair("BraveSoftware/Brave-Browser")],
+        "firefox" if firefox.is_empty() => vec![(home.join(".mozilla"), home.join(".mozilla/native-messaging-hosts"))],
+        "firefox" => vec![(base.join("Firefox"), base.join(firefox).join(hosts))],
+        _ => Vec::new(),
+    }
+}
+
+/// O executável que o navegador abre. No AppImage o caminho real muda a cada execução (é
+/// montado num diretório temporário), então vale o arquivo .AppImage.
+fn host_exe() -> AppResult<PathBuf> {
+    #[cfg(target_os = "linux")]
+    if let Some(p) = std::env::var_os("APPIMAGE").map(PathBuf::from).filter(|p| p.is_file()) {
+        return Ok(p);
+    }
+    Ok(std::env::current_exe()?)
+}
+
 fn bridge_dir(app: &AppHandle) -> AppResult<PathBuf> {
     let dir = app.path().app_data_dir().map_err(|e| AppError::io(e.to_string()))?.join("bridge");
     std::fs::create_dir_all(&dir)?;
@@ -365,8 +451,7 @@ fn extension_dir(app: &AppHandle) -> Option<PathBuf> {
 
 fn write_manifests(app: &AppHandle) -> AppResult<(PathBuf, PathBuf)> {
     let dir = bridge_dir(app)?;
-    let exe = std::env::current_exe()?;
-    let exe = exe.to_string_lossy().to_string();
+    let exe = host_exe()?.to_string_lossy().to_string();
     let chromium = serde_json::json!({
         "name": HOST_NAME,
         "description": "VANTA media bridge",
@@ -461,7 +546,16 @@ fn browsers(app: &AppHandle) -> Vec<BrowserInfo> {
             #[cfg(not(windows))]
             let (installed, registered) = {
                 let _ = (exe, key, &expected);
-                (false, false)
+                let dirs = manifest_dirs(id);
+                let exe = host_exe().ok().map(|p| p.to_string_lossy().to_string());
+                let installed = dirs.iter().any(|(app, _)| app.is_dir());
+                let registered = dirs.iter().any(|(_, hosts)| {
+                    std::fs::read_to_string(hosts.join(format!("{HOST_NAME}.json")))
+                        .ok()
+                        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                        .is_some_and(|v| v["path"].as_str().map(str::to_string) == exe)
+                });
+                (installed, registered)
             };
             BrowserInfo { id: (*id).into(), name: (*name).into(), installed, registered }
         })
@@ -502,8 +596,18 @@ pub fn bridge_register(app: AppHandle) -> AppResult<Vec<BrowserInfo>> {
             return Err(AppError::io(format!("não foi possível registrar o host para {id}")));
         }
     }
+    // Linux e macOS: uma cópia do manifesto na pasta de cada navegador instalado.
     #[cfg(not(windows))]
-    let _ = (chromium, firefox);
+    for (id, _, _, _) in BROWSERS {
+        let manifest = if *id == "firefox" { &firefox } else { &chromium };
+        for (app_dir, hosts) in manifest_dirs(id) {
+            if !app_dir.is_dir() {
+                continue;
+            }
+            std::fs::create_dir_all(&hosts)?;
+            std::fs::copy(manifest, hosts.join(format!("{HOST_NAME}.json")))?;
+        }
+    }
     log::info!(target: "bridge", "host nativo registrado");
     Ok(browsers(&app))
 }
@@ -513,6 +617,12 @@ pub fn bridge_unregister(app: AppHandle) -> AppResult<Vec<BrowserInfo>> {
     #[cfg(windows)]
     for (_, _, _, key) in BROWSERS {
         reg::delete_tree(&format!(r"{key}\{HOST_NAME}"));
+    }
+    #[cfg(not(windows))]
+    for (id, _, _, _) in BROWSERS {
+        for (_, hosts) in manifest_dirs(id) {
+            let _ = std::fs::remove_file(hosts.join(format!("{HOST_NAME}.json")));
+        }
     }
     if let Ok(dir) = bridge_dir(&app) {
         let _ = std::fs::remove_file(dir.join("chromium-host.json"));
