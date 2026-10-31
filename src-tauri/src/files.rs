@@ -118,6 +118,10 @@ mod tests {
         assert!(checked("relative\\file.txt").is_err());
         assert!(checked("\\\\server\\share\\a.txt").is_err());
         assert!(checked("C:\\a\0b").is_err());
+        // o caminho absoluto válido muda com o sistema
+        #[cfg(windows)]
         assert!(checked("C:\\Users\\x\\a.txt").is_ok());
+        #[cfg(not(windows))]
+        assert!(checked("/home/x/a.txt").is_ok());
     }
 }
