@@ -31,7 +31,7 @@ all in one capsule at the top of your screen.
 
 ## Watch it in 55 seconds
 
-[![Watch the VANTA video](docs/media/video.jpg)](https://vanta.notrix.com.br/#video)
+[![Watch the VANTA video](docs/media/video.jpg)](https://vanta.notrix.com.br/)
 
 ## What it does
 

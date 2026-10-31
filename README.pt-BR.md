@@ -28,7 +28,7 @@ numa cápsula no topo da tela.
 
 ## Veja em 55 segundos
 
-[![Assistir ao vídeo do VANTA](docs/media/video.jpg)](https://vanta.notrix.com.br/#video)
+[![Assistir ao vídeo do VANTA](docs/media/video.jpg)](https://vanta.notrix.com.br/)
 
 ## O que ele faz
 
