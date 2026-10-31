@@ -37,31 +37,24 @@
       "capabilities": [
         "default"
       ]
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis",
-      "msi"
-    ],
+    "targets": "all",
     "publisher": "VANTA",
     "copyright": "© 2026 VANTA",
     "category": "Utility",
-    "shortDescription": "Dynamic Island premium para Windows",
-    "longDescription": "VANTA é uma Dynamic Island para Windows: mídia em reprodução, letras, foco, hidratação, tarefas, arquivos e estado do sistema numa cápsula discreta no topo da tela.",
+    "shortDescription": "Dynamic Island para Windows, macOS e Linux",
+    "longDescription": "VANTA é uma Dynamic Island para o computador: mídia em reprodução, letras, conversor, downloads, tarefas, água e estado do sistema numa cápsula discreta no topo da tela.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.icns"
     ],
-    "resources": {
-      "../browser-extension/dist/": "browser-extension/",
-      "bin/ffmpeg.exe": "bin/ffmpeg.exe",
-      "bin/FFMPEG-LICENSE.txt": "bin/FFMPEG-LICENSE.txt",
-      "bin/FFMPEG-NOTICE.txt": "bin/FFMPEG-NOTICE.txt"
-    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper",

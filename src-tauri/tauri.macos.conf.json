@@ -1,0 +1,19 @@
+{
+  "bundle": {
+    "targets": [
+      "dmg",
+      "app"
+    ],
+    "resources": {
+      "../browser-extension/dist/": "browser-extension/",
+      "bin/ffmpeg": "bin/ffmpeg",
+      "bin/FFMPEG-LICENSE.txt": "bin/FFMPEG-LICENSE.txt",
+      "bin/FFMPEG-NOTICE.txt": "bin/FFMPEG-NOTICE.txt",
+      "bin/libpdfium.dylib": "bin/libpdfium.dylib",
+      "bin/PDFIUM-LICENSE.txt": "bin/PDFIUM-LICENSE.txt"
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

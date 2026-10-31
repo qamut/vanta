@@ -72,6 +72,8 @@ fn apply_layer(win: &tauri::WebviewWindow, desktop_only: bool) {
     } else {
         let _ = win.set_always_on_bottom(false);
         let _ = win.set_always_on_top(true);
+        #[cfg(target_os = "macos")]
+        macos::raise_above_menu_bar(win);
     }
 }
 
@@ -202,6 +204,9 @@ pub fn show_after_setup(app: &AppHandle) {
         }
         #[cfg(windows)]
         win32::apply_tool_window_style(&win);
+        // Linux: fora da barra de tarefas e do Alt+Tab, como no Windows.
+        #[cfg(target_os = "linux")]
+        let _ = win.set_skip_taskbar(true);
     }
 }
 
@@ -224,7 +229,7 @@ fn spawn_pointer_thread(app: AppHandle, shared: Arc<Mutex<Shared>>) {
                 let visible = win.is_visible().unwrap_or(false);
                 let mut sleep_ms = 120;
                 if let (true, Some((cx, cy)), Ok(pos), Ok(scale)) =
-                    (visible, cursor_pos(), win.outer_position(), win.scale_factor())
+                    (visible, cursor_pos(&win), win.outer_position(), win.scale_factor())
                 {
                     let lx = (cx - pos.x) as f64 / scale;
                     let ly = (cy - pos.y) as f64 / scale;
@@ -301,7 +306,7 @@ fn spawn_watch_thread(app: AppHandle, shared: Arc<Mutex<Shared>>) {
 }
 
 #[cfg(windows)]
-fn cursor_pos() -> Option<(i32, i32)> {
+fn cursor_pos(_win: &WebviewWindow) -> Option<(i32, i32)> {
     use windows::Win32::Foundation::POINT;
     use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
     let mut p = POINT::default();
@@ -325,13 +330,31 @@ fn is_fullscreen_busy() -> bool {
     }
 }
 
+/// Fora do Windows o Tauri dá a posição global do cursor, em px físicos como `outer_position`.
 #[cfg(not(windows))]
-fn cursor_pos() -> Option<(i32, i32)> {
-    None
+fn cursor_pos(win: &WebviewWindow) -> Option<(i32, i32)> {
+    win.cursor_position().ok().map(|p| (p.x.round() as i32, p.y.round() as i32))
 }
-#[cfg(not(windows))]
+
+/// macOS: o estado do botão vem do CoreGraphics, que não pede permissão de acessibilidade.
+#[cfg(target_os = "macos")]
 fn mouse_down() -> bool {
-    false
+    #[link(name = "CoreGraphics", kind = "framework")]
+    extern "C" {
+        fn CGEventSourceButtonState(state_id: i32, button: u32) -> bool;
+    }
+    // kCGEventSourceStateCombinedSessionState = 0; botão 0 = esquerdo, 1 = direito
+    unsafe { CGEventSourceButtonState(0, 0) || CGEventSourceButtonState(0, 1) }
+}
+
+/// Linux (X11/XWayland): uma conexão por thread, aberta na primeira consulta.
+#[cfg(target_os = "linux")]
+fn mouse_down() -> bool {
+    use device_query::{DeviceQuery, DeviceState};
+    thread_local! {
+        static STATE: Option<DeviceState> = DeviceState::checked_new();
+    }
+    STATE.with(|s| s.as_ref().map(|d| d.get_mouse().button_pressed.iter().skip(1).take(3).any(|b| *b)).unwrap_or(false))
 }
 #[cfg(not(windows))]
 fn is_fullscreen_busy() -> bool {
@@ -354,6 +377,32 @@ mod win32 {
                 SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex);
             }
         }
+    }
+}
+
+#[cfg(target_os = "macos")]
+mod macos {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+    use tauri::WebviewWindow;
+
+    /// NSStatusWindowLevel (25): a ilha fica acima da barra de menus, em todos os Spaces e
+    /// também sobre apps em tela cheia. `set_always_on_top` sozinho deixa a janela abaixo dela.
+    pub fn raise_above_menu_bar(win: &WebviewWindow) {
+        let w = win.clone();
+        let _ = win.run_on_main_thread(move || {
+            let Ok(ptr) = w.ns_window() else { return };
+            if ptr.is_null() {
+                return;
+            }
+            let ns: &AnyObject = unsafe { &*(ptr as *const AnyObject) };
+            // NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary
+            let behavior: usize = (1 << 0) | (1 << 8);
+            unsafe {
+                let _: () = msg_send![ns, setLevel: 25isize];
+                let _: () = msg_send![ns, setCollectionBehavior: behavior];
+            }
+        });
     }
 }
 

@@ -63,9 +63,34 @@ pub fn read() -> PowerState {
     }
 }
 
+/// Linux e macOS: a bateria vem do sysfs/UPower ou do IOKit (crate starship-battery).
 #[cfg(not(windows))]
 pub fn read() -> PowerState {
-    PowerState { available: false, battery: "none".into(), supply: "none".into(), ..Default::default() }
+    use starship_battery::State;
+    let none = PowerState { available: false, battery: "none".into(), supply: "none".into(), ..Default::default() };
+    let Ok(manager) = starship_battery::Manager::new() else { return none };
+    let first = manager.batteries().ok().and_then(|mut it| it.find_map(|b| b.ok()));
+    let Some(b) = first else {
+        // desktop: sem bateria, ligado na tomada
+        return PowerState { available: true, has_battery: false, battery: "none".into(), plugged: true, supply: "adequate".into(), ..Default::default() };
+    };
+    let state = b.state();
+    let battery = match state {
+        State::Charging => "charging",
+        State::Discharging => "discharging",
+        _ => "idle",
+    };
+    let plugged = state != State::Discharging;
+    PowerState {
+        available: true,
+        has_battery: true,
+        percent: Some(((b.state_of_charge().value * 100.0).round() as i32).clamp(0, 100)),
+        battery: battery.into(),
+        plugged,
+        supply: if plugged { "adequate".into() } else { "none".into() },
+        remaining_discharge_min: if state == State::Discharging { b.time_to_empty().map(|t| (t.value / 60.0) as i64).filter(|m| *m > 0 && *m < 60 * 48) } else { None },
+        energy_saver: false,
+    }
 }
 
 #[cfg(windows)]
@@ -93,8 +118,22 @@ pub fn start(app: &AppHandle) {
     }
 }
 
+/// Sem eventos de energia fora do Windows: relê a cada 30 s e avisa quando muda.
 #[cfg(not(windows))]
-pub fn start(_app: &AppHandle) {}
+pub fn start(app: &AppHandle) {
+    let app = app.clone();
+    let _ = std::thread::Builder::new().name("vanta-power".into()).spawn(move || {
+        let mut last = read();
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(30));
+            let now = read();
+            if now != last {
+                let _ = app.emit("power://state", now.clone());
+                last = now;
+            }
+        }
+    });
+}
 
 #[tauri::command]
 pub fn power_state() -> PowerState {

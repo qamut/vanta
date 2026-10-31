@@ -1,7 +1,10 @@
-//! VANTA — Dynamic Island para Windows.
+//! VANTA — Dynamic Island para Windows, macOS e Linux.
 
 mod alarms;
 mod audio;
+// Linux/macOS; os interpretadores são testados em qualquer sistema.
+#[cfg_attr(windows, allow(dead_code))]
+mod audio_unix;
 pub mod bridge;
 mod error;
 mod files;
@@ -53,6 +56,13 @@ pub fn run() {
         std::process::exit(bridge::host::run(&family));
     }
 
+    // Linux: no Wayland puro um app não escolhe a própria posição nem lê o cursor global;
+    // pelo XWayland a ilha consegue ficar presa no topo da tela e saber onde está o mouse.
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("GDK_BACKEND").is_none() {
+        std::env::set_var("GDK_BACKEND", "x11");
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             // Segunda execução: abre as configurações da instância que já está rodando.
@@ -76,6 +86,9 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::Builder::new().app_name("VANTA").build())
         .setup(|app| {
+            // macOS: app de barra de menus, sem ícone no Dock (o Info.plist também diz LSUIElement).
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             let handle = app.handle().clone();
             let store = store::init(&handle)?;
             let alarms = alarms::start(&handle, &store);

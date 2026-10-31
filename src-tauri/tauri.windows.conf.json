@@ -1,0 +1,14 @@
+{
+  "bundle": {
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "resources": {
+      "../browser-extension/dist/": "browser-extension/",
+      "bin/ffmpeg.exe": "bin/ffmpeg.exe",
+      "bin/FFMPEG-LICENSE.txt": "bin/FFMPEG-LICENSE.txt",
+      "bin/FFMPEG-NOTICE.txt": "bin/FFMPEG-NOTICE.txt"
+    }
+  }
+}

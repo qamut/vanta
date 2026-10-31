@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- a ilha vive na barra de menus: sem ícone no Dock -->
+  <key>LSUIElement</key>
+  <true/>
+  <!-- o que está tocando no Spotify e no Música vem por AppleScript -->
+  <key>NSAppleEventsUsageDescription</key>
+  <string>O VANTA lê o que está tocando no Spotify e no Música para mostrar na ilha. / VANTA reads what is playing in Spotify and Music to show it on the island.</string>
+</dict>
+</plist>

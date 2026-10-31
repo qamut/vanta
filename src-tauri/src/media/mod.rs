@@ -1,4 +1,5 @@
-//! Central de mídia: sessões do Windows (GlobalSystemMediaTransportControls).
+//! Central de mídia: sessões do Windows (GlobalSystemMediaTransportControls); no Linux, o
+//! MPRIS (linux.rs); no macOS, o AppleScript do Spotify e do Música (macos.rs).
 //!
 //! Uma thread dedicada (apartamento MTA) possui o gerenciador de sessões. Os eventos
 //! nativos (sessões, propriedades, reprodução, linha do tempo) só marcam "sujo" num canal;
@@ -8,6 +9,14 @@
 
 pub mod model;
 pub mod names;
+// O laço por leitura e o leitor do macOS (processos do sistema) compilam em todo lugar, para os
+// testes rodarem no Windows; só são usados fora dele.
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+mod macos;
+#[cfg_attr(windows, allow(dead_code))]
+mod poll;
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
@@ -65,9 +74,15 @@ pub fn start(app: &AppHandle) -> Media {
         .spawn(move || {
             #[cfg(windows)]
             imp::run(app2, rx, tx2, s2, a2);
-            #[cfg(not(windows))]
+            #[cfg(target_os = "linux")]
             {
-                let _ = (app2, rx, tx2, s2, a2);
+                drop(tx2);
+                poll::run(app2, rx, s2, a2, linux::Mpris::default());
+            }
+            #[cfg(target_os = "macos")]
+            {
+                drop(tx2);
+                poll::run(app2, rx, s2, a2, macos::AppleScript::default());
             }
         })
         .expect("thread de mídia");

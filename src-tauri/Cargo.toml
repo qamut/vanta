@@ -16,7 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri = { version = "2", features = ["tray-icon", "image-png", "macos-private-api"] }
 tauri-plugin-single-instance = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
@@ -30,6 +30,22 @@ log = "0.4"
 base64 = "0.22"
 sha2 = "0.10"
 tokio = { version = "1", features = ["net", "io-util", "sync", "time", "rt", "macros"] }
+
+# Linux e macOS: bateria, PDF (PDFium embutido) e área de transferência.
+[target.'cfg(not(windows))'.dependencies]
+starship-battery = "0.10"
+pdfium-render = "0.8"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+arboard = { version = "3", default-features = false }
+
+# Linux: o que está tocando vem do MPRIS (D-Bus), em Rust puro.
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "5"
+device_query = "3"
+
+# macOS: nível da janela acima da barra de menus.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
 
 [target.'cfg(windows)'.dependencies]
 windows-core = "0.62"

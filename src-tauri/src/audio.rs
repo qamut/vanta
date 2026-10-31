@@ -39,7 +39,7 @@ pub struct AudioState {
     pub battery_available: bool,
 }
 
-enum Msg {
+pub(crate) enum Msg {
     Changed,
     SetVolume(f32, Sender<AppResult<()>>),
     SetMute(bool, Sender<AppResult<()>>),
@@ -89,7 +89,8 @@ pub fn start(app: &AppHandle) -> Audio {
             imp::run(app2, rx, tx2, state2);
             #[cfg(not(windows))]
             {
-                let _ = (app2, rx, tx2, state2);
+                drop(tx2);
+                crate::audio_unix::run(app2, rx, state2);
             }
         })
         .expect("thread de áudio");

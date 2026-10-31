@@ -1,0 +1,29 @@
+{
+  "bundle": {
+    "targets": [
+      "deb",
+      "rpm",
+      "appimage"
+    ],
+    "resources": {
+      "../browser-extension/dist/": "browser-extension/",
+      "bin/ffmpeg": "bin/ffmpeg",
+      "bin/FFMPEG-LICENSE.txt": "bin/FFMPEG-LICENSE.txt",
+      "bin/FFMPEG-NOTICE.txt": "bin/FFMPEG-NOTICE.txt",
+      "bin/libpdfium.so": "bin/libpdfium.so",
+      "bin/PDFIUM-LICENSE.txt": "bin/PDFIUM-LICENSE.txt"
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "pulseaudio-utils"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "pulseaudio-utils"
+        ]
+      }
+    }
+  }
+}

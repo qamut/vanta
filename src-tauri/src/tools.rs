@@ -21,12 +21,32 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::error::{AppError, AppResult};
 
-const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
-const YTDLP_SUMS: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS";
+/// Extensão dos executáveis deste sistema.
+const EXE: &str = if cfg!(windows) { ".exe" } else { "" };
+/// O curl vem com o Windows 10+, o macOS e as distribuições Linux.
+const CURL: &str = if cfg!(windows) { "curl.exe" } else { "curl" };
+
+/// O asset do yt-dlp para este sistema, como aparece no SHA2-256SUMS do release.
+#[cfg(windows)]
+const YTDLP_ASSET: &str = "yt-dlp.exe";
+#[cfg(target_os = "macos")]
+const YTDLP_ASSET: &str = "yt-dlp_macos";
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+const YTDLP_ASSET: &str = "yt-dlp_linux_aarch64";
+#[cfg(all(target_os = "linux", not(target_arch = "aarch64")))]
+const YTDLP_ASSET: &str = "yt-dlp_linux";
+const YTDLP_BASE: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download";
+
 /// gallery-dl (imagens e pastas do Pinterest). Versão FIXA com o SHA-256 que o GitHub publica para o
 /// asset: as releases mais novas não trazem mais o .exe, e fixar o hash é a verificação mais forte.
-const GALLERYDL_URL: &str = "https://github.com/mikf/gallery-dl/releases/download/v1.31.2/gallery-dl.exe";
-const GALLERYDL_SHA256: &str = "3f8bec31523a3f78e0f716a12e090db948945eabebd5b3e5132cd0bd1d8ce2f3";
+/// No macOS não há binário oficial: vale o que o Homebrew instalou (`brew install gallery-dl`).
+#[cfg(windows)]
+const GALLERYDL: Option<(&str, &str)> = Some(("gallery-dl.exe", "3f8bec31523a3f78e0f716a12e090db948945eabebd5b3e5132cd0bd1d8ce2f3"));
+#[cfg(target_os = "linux")]
+const GALLERYDL: Option<(&str, &str)> = Some(("gallery-dl.bin", "5178498af87a7eac6eaf0de9269d90ef02245465ae10c074440ab863c1604224"));
+#[cfg(target_os = "macos")]
+const GALLERYDL: Option<(&str, &str)> = None;
+const GALLERYDL_BASE: &str = "https://github.com/mikf/gallery-dl/releases/download/v1.31.2";
 
 #[derive(Default)]
 pub struct Tools {
@@ -257,33 +277,109 @@ fn thumb_for(ffmpeg: &Path, input: &Path) -> Option<String> {
     match kind_of(&ext) {
         "video" => ffmpeg_thumb(ffmpeg, input, true).or_else(|| ffmpeg_thumb(ffmpeg, input, false)).and_then(|b| data_url(&b)),
         "image" | "audio" => ffmpeg_thumb(ffmpeg, input, false).and_then(|b| data_url(&b)),
-        "pdf" => pdf_first_page_thumb(input).and_then(|b| data_url(&b)),
+        "pdf" => pdf_first_page_thumb(input, ffmpeg.parent().unwrap_or(Path::new("."))).and_then(|b| data_url(&b)),
         _ => None,
     }
 }
 
-fn pdf_first_page_thumb(input: &Path) -> Option<Vec<u8>> {
-    use windows::core::HSTRING;
-    use windows::Data::Pdf::{PdfDocument, PdfPageRenderOptions};
-    use windows::Storage::StorageFile;
-    use windows::Storage::Streams::{DataReader, InMemoryRandomAccessStream};
+fn pdf_first_page_thumb(input: &Path, lib_dir: &Path) -> Option<Vec<u8>> {
+    let doc = pdf::Doc::open(input, lib_dir).ok()?;
+    doc.render(0, Some(160)).ok()
+}
+
+/// PDF → imagem: o renderizador do próprio Windows (Windows.Data.Pdf) ou, no Linux e no macOS,
+/// o PDFium que vai junto em `bin/` (o motor de PDF do Chromium, licença BSD).
+mod pdf {
+    use std::path::Path;
+
     #[cfg(windows)]
-    unsafe {
-        let _ = windows::Win32::System::WinRT::RoInitialize(windows::Win32::System::WinRT::RO_INIT_MULTITHREADED);
+    pub struct Doc(windows::Data::Pdf::PdfDocument);
+
+    #[cfg(windows)]
+    impl Doc {
+        pub fn open(path: &Path, _lib_dir: &Path) -> Result<Self, String> {
+            use windows::core::HSTRING;
+            use windows::Data::Pdf::PdfDocument;
+            use windows::Storage::StorageFile;
+            unsafe {
+                let _ = windows::Win32::System::WinRT::RoInitialize(windows::Win32::System::WinRT::RO_INIT_MULTITHREADED);
+            }
+            let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path.as_os_str())).and_then(|op| op.join()).map_err(|e| format!("não foi possível abrir o PDF: {}", e.message()))?;
+            PdfDocument::LoadFromFileAsync(&file)
+                .and_then(|op| op.join())
+                .map(Doc)
+                .map_err(|e| if e.code().0 as u32 == 0x8007_0005 { "o PDF está protegido por senha".to_string() } else { format!("PDF ilegível: {}", e.message()) })
+        }
+
+        pub fn pages(&self) -> Result<u32, String> {
+            self.0.PageCount().map_err(|e| e.message().to_string())
+        }
+
+        /// PNG da página; sem largura pedida, 2× o tamanho da página (~192 ppp), até 6000 px.
+        pub fn render(&self, index: u32, width: Option<u32>) -> Result<Vec<u8>, String> {
+            use windows::Data::Pdf::PdfPageRenderOptions;
+            use windows::Storage::Streams::{DataReader, InMemoryRandomAccessStream};
+            let r = || -> windows::core::Result<Vec<u8>> {
+                let page = self.0.GetPage(index)?;
+                let size = page.Size()?;
+                let opts = PdfPageRenderOptions::new()?;
+                let scale = (6000.0 / size.Width.max(size.Height).max(1.0)).min(2.0);
+                opts.SetDestinationWidth(width.unwrap_or_else(|| (size.Width * scale).round().max(1.0) as u32))?;
+                let stream = InMemoryRandomAccessStream::new()?;
+                page.RenderWithOptionsToStreamAsync(&stream, &opts)?.join()?;
+                let len = stream.Size()? as u32;
+                let reader = DataReader::CreateDataReader(&stream.GetInputStreamAt(0)?)?;
+                reader.LoadAsync(len)?.join()?;
+                let mut buf = vec![0u8; len as usize];
+                reader.ReadBytes(&mut buf)?;
+                Ok(buf)
+            };
+            r().map_err(|e| e.message().to_string())
+        }
     }
-    let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(input.as_os_str())).ok()?.join().ok()?;
-    let doc = PdfDocument::LoadFromFileAsync(&file).ok()?.join().ok()?;
-    let page = doc.GetPage(0).ok()?;
-    let opts = PdfPageRenderOptions::new().ok()?;
-    opts.SetDestinationWidth(160).ok()?;
-    let stream = InMemoryRandomAccessStream::new().ok()?;
-    page.RenderWithOptionsToStreamAsync(&stream, &opts).ok()?.join().ok()?;
-    let len = stream.Size().ok()? as u32;
-    let reader = DataReader::CreateDataReader(&stream.GetInputStreamAt(0).ok()?).ok()?;
-    reader.LoadAsync(len).ok()?.join().ok()?;
-    let mut buf = vec![0u8; len as usize];
-    reader.ReadBytes(&mut buf).ok()?;
-    Some(buf)
+
+    #[cfg(not(windows))]
+    pub struct Doc(pdfium_render::prelude::PdfDocument<'static>);
+
+    #[cfg(not(windows))]
+    fn pdfium(lib_dir: &Path) -> Result<&'static pdfium_render::prelude::Pdfium, String> {
+        use pdfium_render::prelude::Pdfium;
+        static PDFIUM: std::sync::OnceLock<Option<Pdfium>> = std::sync::OnceLock::new();
+        PDFIUM
+            .get_or_init(|| {
+                Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(lib_dir))
+                    .or_else(|_| Pdfium::bind_to_system_library())
+                    .map(Pdfium::new)
+                    .map_err(|e| log::warn!(target: "tools", "PDFium indisponível: {e}"))
+                    .ok()
+            })
+            .as_ref()
+            .ok_or_else(|| "o renderizador de PDF (PDFium) não foi encontrado".to_string())
+    }
+
+    #[cfg(not(windows))]
+    impl Doc {
+        pub fn open(path: &Path, lib_dir: &Path) -> Result<Self, String> {
+            pdfium(lib_dir)?.load_pdf_from_file(path, None).map(Doc).map_err(|e| format!("PDF ilegível ou protegido por senha: {e}"))
+        }
+
+        pub fn pages(&self) -> Result<u32, String> {
+            Ok(self.0.pages().len() as u32)
+        }
+
+        /// Mesma escala do Windows: 2 DIP por ponto de 96 ppp, ou seja ~2,67 px por ponto PDF.
+        pub fn render(&self, index: u32, width: Option<u32>) -> Result<Vec<u8>, String> {
+            use pdfium_render::prelude::PdfRenderConfig;
+            let page = self.0.pages().get(index as u16).map_err(|e| e.to_string())?;
+            let (w, h) = (page.width().value, page.height().value);
+            let scale = (6000.0 / w.max(h).max(1.0)).min(2.0 * 96.0 / 72.0);
+            let target = width.unwrap_or_else(|| (w * scale).round().max(1.0) as u32);
+            let image = page.render_with_config(&PdfRenderConfig::new().set_target_width(target as i32)).map_err(|e| e.to_string())?.as_image();
+            let mut png = Vec::new();
+            image.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).map_err(|e| e.to_string())?;
+            Ok(png)
+        }
+    }
 }
 
 /// Miniatura de um arquivo da fila do conversor. `None` quando não há o que mostrar.
@@ -300,7 +396,7 @@ fn fetch_thumb(url: &str, tmp: &Path) -> Option<String> {
     if !url.starts_with("https://") || url.len() > 2048 || url.contains(char::is_whitespace) {
         return None;
     }
-    let st = hidden(Command::new("curl.exe").args(["-L", "--fail", "--silent", "--max-time", "15", "--max-filesize", "3145728", "-o"]).arg(tmp).arg("--").arg(url))
+    let st = hidden(Command::new(CURL).args(["-L", "--fail", "--silent", "--max-time", "15", "--max-filesize", "3145728", "-o"]).arg(tmp).arg("--").arg(url))
         .status()
         .ok()?;
     let bytes = st.success().then(|| std::fs::read(tmp).ok()).flatten();
@@ -319,13 +415,13 @@ fn hidden(cmd: &mut Command) -> &mut Command {
 
 fn ffmpeg_path(app: &AppHandle) -> AppResult<PathBuf> {
     if let Ok(res) = app.path().resource_dir() {
-        let p = res.join("bin").join("ffmpeg.exe");
+        let p = res.join("bin").join(format!("ffmpeg{EXE}"));
         if p.is_file() {
             return Ok(p);
         }
     }
     if cfg!(debug_assertions) {
-        let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bin").join("ffmpeg.exe");
+        let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bin").join(format!("ffmpeg{EXE}"));
         if p.is_file() {
             return Ok(p);
         }
@@ -334,11 +430,17 @@ fn ffmpeg_path(app: &AppHandle) -> AppResult<PathBuf> {
 }
 
 fn gallerydl_path(app: &AppHandle) -> AppResult<PathBuf> {
-    Ok(app.path().app_data_dir().map_err(|e| AppError::io(e.to_string()))?.join("bin").join("gallery-dl.exe"))
+    #[cfg(target_os = "macos")]
+    for p in ["/opt/homebrew/bin/gallery-dl", "/usr/local/bin/gallery-dl"] {
+        if Path::new(p).is_file() {
+            return Ok(PathBuf::from(p));
+        }
+    }
+    Ok(app.path().app_data_dir().map_err(|e| AppError::io(e.to_string()))?.join("bin").join(format!("gallery-dl{EXE}")))
 }
 
 fn ytdlp_path(app: &AppHandle) -> AppResult<PathBuf> {
-    Ok(app.path().app_data_dir().map_err(|e| AppError::io(e.to_string()))?.join("bin").join("yt-dlp.exe"))
+    Ok(app.path().app_data_dir().map_err(|e| AppError::io(e.to_string()))?.join("bin").join(format!("yt-dlp{EXE}")))
 }
 
 /// Espera o processo sem segurar a trava (o cancelamento precisa conseguir pegá-la).
@@ -682,27 +784,6 @@ fn page_output(input: &Path, page: u32, pages: u32, target: &str, dir: Option<&P
     output_path(&named, target, dir.or(input.parent()))
 }
 
-/// PDF → imagens com o renderizador de PDF do próprio Windows (Windows.Data.Pdf): uma imagem por
-/// página, a 2× o tamanho da página (~192 ppp). PNG sai direto; JPG/WEBP passam pelo ffmpeg.
-fn render_pdf_page(doc: &windows::Data::Pdf::PdfDocument, index: u32) -> windows::core::Result<Vec<u8>> {
-    use windows::Data::Pdf::PdfPageRenderOptions;
-    use windows::Storage::Streams::{DataReader, InMemoryRandomAccessStream};
-    let page = doc.GetPage(index)?;
-    let size = page.Size()?;
-    let opts = PdfPageRenderOptions::new()?;
-    // limite de 6000 px no lado maior: página gigante não estoura a memória
-    let scale = (6000.0 / size.Width.max(size.Height).max(1.0)).min(2.0);
-    opts.SetDestinationWidth((size.Width * scale).round().max(1.0) as u32)?;
-    let stream = InMemoryRandomAccessStream::new()?;
-    page.RenderWithOptionsToStreamAsync(&stream, &opts)?.join()?;
-    let len = stream.Size()? as u32;
-    let reader = DataReader::CreateDataReader(&stream.GetInputStreamAt(0)?)?;
-    reader.LoadAsync(len)?.join()?;
-    let mut buf = vec![0u8; len as usize];
-    reader.ReadBytes(&mut buf)?;
-    Ok(buf)
-}
-
 fn pdf_to_images_job(app: &AppHandle, tools: &Tools, input: PathBuf, target: String, out_dir: Option<PathBuf>) -> AppResult<String> {
     let ffmpeg = ffmpeg_path(app)?;
     let id = tools.next_id("convert");
@@ -716,21 +797,10 @@ fn pdf_to_images_job(app: &AppHandle, tools: &Tools, input: PathBuf, target: Str
     let app2 = app.clone();
     let tmp = std::env::temp_dir().join(format!("vanta-{id}"));
     std::thread::spawn(move || {
-        #[cfg(windows)]
-        unsafe {
-            use windows::Win32::System::WinRT::{RoInitialize, RO_INIT_MULTITHREADED};
-            let _ = RoInitialize(RO_INIT_MULTITHREADED);
-        }
         let mut made: Vec<PathBuf> = Vec::new();
         let result = (|| -> Result<Option<()>, String> {
-            use windows::core::HSTRING;
-            use windows::Data::Pdf::PdfDocument;
-            use windows::Storage::StorageFile;
-            let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(input.as_os_str())).and_then(|op| op.join()).map_err(|e| format!("não foi possível abrir o PDF: {}", e.message()))?;
-            let doc = PdfDocument::LoadFromFileAsync(&file)
-                .and_then(|op| op.join())
-                .map_err(|e| if e.code().0 as u32 == 0x8007_0005 { "o PDF está protegido por senha".to_string() } else { format!("PDF ilegível: {}", e.message()) })?;
-            let pages = doc.PageCount().map_err(|e| e.message().to_string())?;
+            let doc = pdf::Doc::open(&input, ffmpeg.parent().unwrap_or(Path::new(".")))?;
+            let pages = doc.pages()?;
             if pages == 0 {
                 return Err("o PDF não tem páginas".into());
             }
@@ -739,7 +809,7 @@ fn pdf_to_images_job(app: &AppHandle, tools: &Tools, input: PathBuf, target: Str
                 if stop.load(Ordering::SeqCst) {
                     return Ok(None);
                 }
-                let png = render_pdf_page(&doc, i).map_err(|e| format!("falha ao desenhar a página {}: {}", i + 1, e.message()))?;
+                let png = doc.render(i, None).map_err(|e| format!("falha ao desenhar a página {}: {e}", i + 1))?;
                 let out = page_output(&input, i + 1, pages, &target, out_dir.as_deref());
                 if target == "png" {
                     std::fs::write(&out, &png).map_err(|e| e.to_string())?;
@@ -862,7 +932,7 @@ fn sha256_file(path: &Path) -> AppResult<String> {
 }
 
 fn curl(url: &str, out: &Path) -> AppResult<()> {
-    let st = hidden(Command::new("curl.exe").args(["-L", "--fail", "--silent", "--show-error", "--max-time", "300", "-o"]).arg(out).arg(url))
+    let st = hidden(Command::new(CURL).args(["-L", "--fail", "--silent", "--show-error", "--max-time", "300", "-o"]).arg(out).arg(url))
         .status()
         .map_err(|e| AppError::unavailable(format!("curl indisponível: {e}")))?;
     if st.success() {
@@ -870,6 +940,17 @@ fn curl(url: &str, out: &Path) -> AppResult<()> {
     } else {
         Err(AppError::unavailable("não foi possível baixar o componente (sem internet?)"))
     }
+}
+
+/// Linux e macOS: o arquivo baixado só roda com permissão de execução.
+fn make_executable(path: &Path) -> AppResult<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))?;
+    }
+    let _ = path;
+    Ok(())
 }
 
 /// Uma instalação por vez (a automática e o botão podem coincidir).
@@ -887,14 +968,14 @@ fn install_ytdlp(exe: &Path) -> AppResult<String> {
         std::fs::create_dir_all(&dir)?;
         let tmp = dir.join("yt-dlp.download");
         let sums = dir.join("SHA2-256SUMS.download");
-        curl(YTDLP_URL, &tmp)?;
-        curl(YTDLP_SUMS, &sums)?;
+        curl(&format!("{YTDLP_BASE}/{YTDLP_ASSET}"), &tmp)?;
+        curl(&format!("{YTDLP_BASE}/SHA2-256SUMS"), &sums)?;
         let expected = std::fs::read_to_string(&sums)?
             .lines()
             .find_map(|l| {
                 let mut it = l.split_whitespace();
                 let hash = it.next()?;
-                (it.next()? == "yt-dlp.exe").then(|| hash.to_ascii_lowercase())
+                (it.next()? == YTDLP_ASSET).then(|| hash.to_ascii_lowercase())
             })
             .ok_or_else(|| AppError::invalid("lista de verificação do yt-dlp sem o arquivo esperado"))?;
         let got = sha256_file(&tmp)?;
@@ -904,6 +985,7 @@ fn install_ytdlp(exe: &Path) -> AppResult<String> {
             return Err(AppError::invalid("o arquivo baixado não confere com o hash oficial; descartado"));
         }
         std::fs::rename(&tmp, exe)?;
+        make_executable(exe)?;
         log::info!(target: "tools", "yt-dlp instalado e verificado ({got})");
         Ok(got)
     }
@@ -915,16 +997,20 @@ fn install_gallerydl(exe: &Path) -> AppResult<String> {
     if exe.is_file() {
         return Ok(String::new());
     }
+    let Some((asset, sha256)) = GALLERYDL else {
+        return Err(AppError::unavailable("no macOS, as galerias de imagens usam o gallery-dl do Homebrew: brew install gallery-dl"));
+    };
     let dir = exe.parent().ok_or_else(|| AppError::io("pasta"))?.to_path_buf();
     std::fs::create_dir_all(&dir)?;
     let tmp = dir.join("gallery-dl.download");
-    curl(GALLERYDL_URL, &tmp)?;
+    curl(&format!("{GALLERYDL_BASE}/{asset}"), &tmp)?;
     let got = sha256_file(&tmp)?;
-    if got != GALLERYDL_SHA256 {
+    if got != sha256 {
         let _ = std::fs::remove_file(&tmp);
         return Err(AppError::invalid("o gallery-dl baixado não confere com o hash oficial; descartado"));
     }
     std::fs::rename(&tmp, exe)?;
+    make_executable(exe)?;
     log::info!(target: "tools", "gallery-dl instalado e verificado ({got})");
     Ok(got)
 }
@@ -1211,8 +1297,33 @@ pub fn start_clipboard_watch(app: &AppHandle, tools: &Tools) {
                     }
                 }
             }
+            // Linux e macOS: sem contador de sequência, compara o texto (só textos curtos).
             #[cfg(not(windows))]
-            let _ = (flag, app);
+            {
+                let read = |cb: &mut Option<arboard::Clipboard>| -> Option<String> {
+                    if cb.is_none() {
+                        *cb = arboard::Clipboard::new().ok();
+                    }
+                    cb.as_mut()?.get_text().ok().filter(|t| t.len() <= 8192)
+                };
+                let mut cb = None;
+                let mut last = read(&mut cb);
+                loop {
+                    std::thread::sleep(Duration::from_millis(700));
+                    let now = read(&mut cb);
+                    if now == last {
+                        continue;
+                    }
+                    last = now.clone();
+                    if !flag.load(Ordering::Relaxed) {
+                        continue;
+                    }
+                    if let Some(site) = now.as_deref().and_then(video_site) {
+                        let url = now.unwrap_or_default().trim().to_string();
+                        let _ = app.emit_to(crate::island::ISLAND_LABEL, "tools://link", LinkEvent { url, site: site.into() });
+                    }
+                }
+            }
         })
         .expect("thread da área de transferência");
 }
@@ -1360,19 +1471,16 @@ mod tests {
     /// Precisa de um JPEG de verdade: `VANTA_TEST_JPEG=caminho cargo test -- --ignored pdf_roundtrip`.
     #[test]
     #[ignore]
+    #[cfg(windows)]
     fn pdf_roundtrip_with_windows_renderer() {
         let jpg = std::fs::read(std::env::var("VANTA_TEST_JPEG").expect("VANTA_TEST_JPEG")).unwrap();
         let (w, h, c) = jpeg_info(&jpg).unwrap();
         let page = || PdfImage { data: jpg.clone(), width: w, height: h, components: c };
         let path = std::env::temp_dir().join("vanta-roundtrip.pdf");
         write_pdf(&[page(), page()], &path).unwrap();
-        unsafe {
-            let _ = windows::Win32::System::WinRT::RoInitialize(windows::Win32::System::WinRT::RO_INIT_MULTITHREADED);
-        }
-        let file = windows::Storage::StorageFile::GetFileFromPathAsync(&windows::core::HSTRING::from(path.as_os_str())).unwrap().join().unwrap();
-        let doc = windows::Data::Pdf::PdfDocument::LoadFromFileAsync(&file).unwrap().join().unwrap();
-        assert_eq!(doc.PageCount().unwrap(), 2);
-        let png = render_pdf_page(&doc, 1).unwrap();
+        let doc = pdf::Doc::open(&path, Path::new(".")).unwrap();
+        assert_eq!(doc.pages().unwrap(), 2);
+        let png = doc.render(1, None).unwrap();
         assert_eq!(&png[..4], &[0x89, b'P', b'N', b'G']);
         let out = std::env::temp_dir().join("vanta-roundtrip-p2.png");
         std::fs::write(&out, &png).unwrap();
